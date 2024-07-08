@@ -1,1 +1,1 @@
-# Gaeumannomyces *Starships*
+# *Gaeumannomyces Starships*
