@@ -475,11 +475,6 @@ pdf(file=paste0("R:/GaeumannomycesStarships/shared_orthos_all-",
 gg.upset.all.member.size / gg.upset.accessory + plot_layout(heights=c(0.5, 2))
 dev.off()
 
-#Most common genes (in > 10 elements)
-element.genes %>%
-  filter(orthogroup %in% element.cargo.accessory.upset.members$orthogroup[element.cargo.accessory.upset.members$num > 10]) %>%
-  arrange(orthogroup)
-
 
 ## Inset upset plot (species.level) ##
 
@@ -774,59 +769,100 @@ element.genes <- elements.df %>%
          seq_id=factor(seq_id, levels=tree.levels))
 
 #Read in BLAST results
-blast.files <- Sys.glob(paste0(dir.starship, "blasts/*.tsv"))
-blast.files <- blast.files[file.size(blast.files) > 0]
-blasts.df <- do.call("rbind", lapply(
-  blast.files,
-  function(fn)
-    data.frame(read.csv(fn, sep="\t", header=FALSE))
-)) %>%
-  dplyr::rename(accession="V1", ID="V2", evalue="V3", bitscore="V4", pident="V5", length="V6") %>%
-  mutate(gene=recode(accession,
-                     mp102_11352="FRE",
-                     mp102_11357="PLP",
-                     mp102_ofg737="NLR",
-                     `JX560967.1`="Spok1",
-                     `sp|B2AFA8.2|SPOK2_PODAN`="Spok2",
-                     `MK521588.1`="Spok3",
-                     `MK521589.1`="Spok4"))
+# blast.files <- Sys.glob(paste0(dir.starship, "blasts/*.tsv"))
+# blast.files <- blast.files[file.size(blast.files) > 0]
+# blasts.df <- do.call("rbind", lapply(
+#   blast.files,
+#   function(fn)
+#     data.frame(read.csv(fn, sep="\t", header=FALSE))
+# )) %>%
+#   dplyr::rename(accession="V1", ID="V2", evalue="V3", bitscore="V4", pident="V5", length="V6") %>%
+#   mutate(gene=recode(accession,
+#                      mp102_11352="FRE",
+#                      mp102_11357="PLP",
+#                      `JX560967.1`="Spok1",
+#                      `sp|B2AFA8.2|SPOK2_PODAN`="Spok2",
+#                      `MK521588.1`="Spok3",
+#                      `MK521589.1`="Spok4"))
 
 #Make dataframe of domains previously identified in element cargos
 pfams <- data.frame(
   Pfam=c("PF12520", "PF01794", "PF08022", "PF08030",
-         "PF01734", "PF17107", "PF05729", "PF12796",
-         "PF00023", "PF06985", "PF05729"),
+         "PF01734", "PF17107", "PF05729", "PF12796", "PF00023", "PF06985"),
   domain.name=c("DUF3723", "Ferric_reduc", "FAD_binding_8", "NAD_binding_6",
-                "Patatin", "SesA", "NACHT", "Ank_2",
-                "Ank", "HET", "NACHT")
+                "Patatin", "SesA", "NACHT", "Ank_2", "Ank", "HET")
 )
 
 #Add domain names to AHRD dataframe
 ahrds.df <- ahrds.df %>%
   mutate(Pfam=ifelse(grepl("Pfam", Human.Readable.Description),
                      sub("}.*", "", sub(".*Pfam:", "", Human.Readable.Description)), NA),
-         domain.name=pfams$domain.name[match(Pfam, pfams$Pfam)])
+         domain.name=pfams$domain.name[match(Pfam, pfams$Pfam)],
+         domain.name=ifelse(is.na(domain.name) & grepl("domain", Human.Readable.Description),
+                            sub(".*=", "",
+                                sub("domain-containing.*", "", Human.Readable.Description)),
+                            domain.name))
 
 #Add functional info to element genes dataframe
-element.genes <- element.genes %>%
-  mutate(blast.hit=blasts.df$gene[match(feat_id, sub("-", "", blasts.df$ID))],
-         pfam=ahrds.df$domain.name[match(feat_id, sub("-", "", ahrds.df$Protein.Accession))],
-         category=ifelse(!is.na(blast.hit),
-                         blast.hit, category),
-         category=ifelse(!is.na(pfam) & category == "gene",
-                         paste0(pfam, " domain"), category))
+element.genes.func <- element.genes %>%
+  mutate(domain=str_trim(ahrds.df$domain.name[match(feat_id, sub("-", "", ahrds.df$Protein.Accession))]),
+         category=ifelse(!is.na(domain) & category == "gene",
+                         paste0(domain, " domain"), category))
 
-#Number of annotated features
-table(element.genes$category)
+#Most common genes/domains (in >=50% elements)
+element.genes.func.sum <- element.genes.func %>%
+  filter(!category %in% c("gene", "transposable_element_gene")) %>%
+  group_by(category) %>%
+  summarise(num.elements=n_distinct(elementID)) %>%
+  arrange(desc(num.elements)) %>%
+  mutate(prop=num.elements/length(unique(element.cargo.df$elementID))) %>%
+  filter(prop >= 0.5)
 
-#CSEPs in elements
+#Most common domains in general
+ahrds.df %>%
+  mutate(strain=sub("_.*", "", Protein.Accession)) %>%
+  filter(!is.na(domain.name)) %>%
+  group_by(strain, domain.name) %>%
+  summarise(num=n()) %>%
+  arrange(strain, desc(num)) %>%
+  slice_head(n=5) %>%
+  print(n=45)
+
+#Plot bar graph of common genes/domains
+gg.func.sum <- ggplot(element.genes.func.sum, aes(x=prop, y=fct_reorder(category, prop))) +
+  geom_bar(aes(fill=category), stat="identity") +
+  scale_x_continuous(limits=c(0, 1),
+                     expand=c(0, 0),
+                     labels=label_percent()) +
+  scale_y_discrete(label=rev(c("Captain", "CAZyme", "Ank Rep domain", "Zn(2)-C6 domain", "HTH CENPB-type domain", "HET domain"))) +
+  scale_fill_manual(values=c("#E65518", "#F4A736", "#CAE0AB", "#7BAFDE", "#4EB265", "#1965B0"),
+                    breaks=c("cap", "CAZyme", "ANK_REP_REGION domain",
+                             "Zn(2)-C6 fungal-type domain", "HTH CENPB-type domain", "HET domain"),
+                    limits=c("cap", "CAZyme", "ANK_REP_REGION domain",
+                             "Zn(2)-C6 fungal-type domain", "HTH CENPB-type domain", "HET domain")) +
+  labs(x="Proportion of elements with gene/domain", y=NULL) +
+  theme_minimal() +
+  theme(legend.position="none",
+        axis.title=element_text(size=6),
+        axis.text=element_text(size=6),
+        axis.ticks.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        plot.margin=margin(5.5, 10, 5.5, 5.5)) +
+  ggpreview(width=2.5, height=1.5)
+
+#Which CSEPs in elements
 orthogroups.stats %>%
   filter(orthogroup %in% element.genes$orthogroup,
          !is.na(CSEP))
-#CAZymes in elements
+#Which CAZymes in elements
 orthogroups.stats %>%
   filter(orthogroup %in% element.genes$orthogroup,
          !is.na(CAZyme))
+
+#Keep only most common/interesting categories for plotting
+element.genes <- element.genes.func %>%
+  mutate(category=ifelse(category %in% c(element.genes.func.sum$category, "CSEP", "tyr", "transposable_element_gene"),
+                         category, "gene"))
 
 #Get flanking repeats
 element.flanks <- elements.df %>% 
@@ -886,14 +922,17 @@ gg.element.schematic <- gggenomes(seqs=element.seqs) +
             shape=0,
             colour=NA) +
   scale_fill_manual(values=c("#E65518", "lightgrey", "#AE76A3", "#F4A736",
-                             "#D1BBD7", "#4EB265", "dimgrey", "#7BAFDE",
+                             "#CAE0AB", "#7BAFDE", "#4EB265", "#1965B0", "dimgrey", "#FDDBC7",
                              "white", "white"),
-                    breaks=c("cap", "gene", "CSEP", "CAZyme",
-                             "NLR", "HET domain", "transposable_element_gene", "tyr"),
-                    limits=c("cap", "gene", "CSEP", "CAZyme",
-                             "NLR", "HET domain", "transposable_element_gene", "tyr"),
-                    labels=c("cap", "gene", "CSEP", "CAZyme",
-                             "NLR", "HET domain", "TE", "tyr")) +
+                    breaks=c("cap", "gene", "CSEP", "CAZyme", "ANK_REP_REGION domain",
+                             "Zn(2)-C6 fungal-type domain", "HTH CENPB-type domain",
+                             "HET domain", "transposable_element_gene", "tyr"),
+                    limits=c("cap", "gene", "CSEP", "CAZyme", "ANK_REP_REGION domain",
+                             "Zn(2)-C6 fungal-type domain", "HTH CENPB-type domain",
+                             "HET domain", "transposable_element_gene", "tyr"),
+                    labels=c("cap", "gene", "CSEP", "CAZyme", "Ank Rep domain",
+                             "Zn(2)-C6 domain", "HTH CENPB-type domain",
+                             "HET domain", "TE", "tyr")) +
   scale_x_continuous(position="top",
                      breaks=pretty_breaks(),
                      labels=label_number(scale=1e-3, suffix=" Kbp")) +
@@ -921,8 +960,8 @@ gg.element.schematic.repeats <- gg.element.schematic +
   guides(fill=guide_legend(order=1),
          shape=guide_legend(order=2,
                             override.aes=list(size=1.6, stroke=0.6))) +
-  theme(legend.position=c(0.85, 0.75),
-        legend.text=element_text(size=7),
+  theme(legend.position=c(0.85, 0.73),
+        legend.text=element_text(size=7, margin=margin(l=1, b=2)),
         legend.key.size=unit(8, "pt"),
         legend.title=element_blank(),
         legend.margin=margin(0,0,-10,0),
@@ -933,9 +972,13 @@ gg.element.schematic.repeats <- gg.element.schematic +
 #Write to file
 pdf(paste0("R:/GaeumannomycesStarships/schematic-",
            Sys.Date(), ".pdf"),
-    width=4.5, height=4)
-(gg.tree | gg.element.schematic.repeats) +
-  plot_layout(widths=c(1, 8))
+    width=7, height=4)
+(gg.tree | gg.element.schematic.repeats |
+    (plot_spacer() / gg.func.sum) +
+    plot_layout(heights=c(3, 1))) +
+  plot_layout(widths=c(1, 8, 3)) +
+  plot_annotation(tag_levels=list(c("a", ""))) & 
+  theme(plot.tag=element_text(face="bold"))
 dev.off()
 
 
@@ -961,4 +1004,4 @@ grep("spobra1_10718", sordario.elements$ID)
 #GtA gene orthogroup
 genes.df %>% filter(orthogroup == "N0.HOG0000251")
 
-# write.csv(cargo, "Papers/Gaeumannomyces_starships_paper/starfish_cargo.csv", row.names=FALSE)
+# write.csv(element.genes.func, "Papers/Gaeumannomyces_starships_paper/starfish_cargo.csv", row.names=FALSE)
