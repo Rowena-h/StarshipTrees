@@ -1,4 +1,4 @@
-# *Gaeumannomyces Starships*
+# Kmer-based phylogenetic classification of *Starship* cargo-mobilising transposable elements
 
 ![Graphical abstract](graphical_abstract.png)
 
