@@ -1,6 +1,8 @@
 # Kmer-based phylogenetic classification of *Starship* cargo-mobilising transposable elements
 
-![Graphical abstract](graphical_abstract.png)
+<picture>
+  <img alt="Graphical abstract" src="graphical_abstract.png">
+</picture>
 
 Bioinformatics workflow for:
 > Hill et al. (in prep) ***
