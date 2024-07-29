@@ -5,7 +5,6 @@ library(ComplexUpset) #1.3.3
 library(ggforce)      #0.4.2
 library(gggenomes)    #1.0.0
 library(ggtree)       #3.9.1
-library(GO.db)        #3.17.0
 library(matrixStats)  #1.3.0
 library(patchwork)    #1.2.0
 library(scales)       #1.3.0
@@ -74,6 +73,28 @@ range(element.cargo.df %>%
         group_by(elementID) %>%
         summarise(n()) %>%
         pull())
+
+#Read in tree for context
+kmer.element.big.tree <- read.tree("R:/GaeumannomycesStarships/mashtree/starship_tree_big.bootstrap.tre")
+kmer.element.big.tree$tip.label <- sub("__.*", "", sub("gaeumannomyces.elements.id_", "", sub("mycodb.final.starships.id_", "", kmer.element.big.tree$tip.label)))
+kmer.element.big.tree$tip.label <- gsub("Gt-3aA1", "Ga-3aA1", gsub("Gt-CB1", "Ga-CB1", gsub("Gt14LH10", "Gt-LH10", kmer.element.big.tree$tip.label)))
+
+#Subset for Gaeumannomyces tips
+tree.backbone <- extract.clade(kmer.element.big.tree, 1116)
+tree.backbone <- drop.tip(
+  tree.backbone,
+  tree.backbone$tip.label[!tree.backbone$tip.label %in% elements.df$elementID]
+)
+
+#Plot base tree
+gg.tree <- ggtree(tree.backbone, branch.length="none", lwd=0.2) +
+  xlim(0, 10)
+
+#Vector to order plots as in phylogeny
+tree.levels <- gg.tree$data %>%
+  filter(isTip) %>%
+  arrange(desc(y)) %>%
+  pull(label)
 
 
 ###################################
@@ -203,34 +224,36 @@ cargo.location.counts.df <- cargo.location.df %>%
 #Plot as bargraph
 gg.location <- ggplot(cargo.location.counts.df, aes(x=num.orthos, y=element)) +
   geom_bar(stat="identity", aes(fill=values), width=0.8) +
-  geom_hline(data=data.frame(y=c(2.5, 6.5, 9.5, 13.5)),
-             aes(yintercept=y),
+  geom_segment(data=data.frame(y=c(2.5, 6.5, 9.5, 13.5)),
+               aes(y=y, yend=y, x=-200, xend=150),
              colour="grey",
              linewidth=0.3) +
-  geom_hline(data=data.frame(y=c(6.5)),
-             aes(yintercept=y),
+  geom_segment(data=data.frame(y=c(6.5)),
+             aes(y=y, yend=y, x=-200, xend=150),
              linewidth=0.3) +
   scale_fill_manual(values=c("#4B854C", "#C3D6C3"),
                     labels=c("also outside", "only inside")) +
-  coord_cartesian(clip="off") +
-  labs(x="Genes", y=NULL, fill="Location of all\ngene copies") +
-  theme(axis.title=element_blank(),
+  coord_cartesian(clip="off", xlim=c(0, 150)) +
+  labs(x="Total number\nof genes", y=NULL, fill="Location of all\ngene copies") +
+  theme_minimal() +
+  theme(axis.title.x=element_text(size=7), 
         axis.text.x=element_text(size=5),
-        axis.text.y=element_blank(),
-        axis.ticks.y=element_blank(),
+        axis.text.y=element_text(size=5, margin=margin(r=-1)),
+        axis.ticks.x=element_line(),
         legend.position=c(0.5, 1.2),
         legend.key.size=unit(7, "pt"),
         legend.title=element_text(size=7, face="bold"),
         legend.text=element_text(size=7),
-        panel.grid=element_blank(),
-        panel.background=element_blank())
+        panel.grid.major.y=element_blank(),
+        panel.background=element_blank()) +
+  ggpreview(width=1.14, height=3)
 
 #Write to file
 pdf(file=paste0("R:/GaeumannomycesStarships/shared_orthos_grid-",
                 Sys.Date(), ".pdf"),
-    height=3.2, width=4)
+    height=3.25, width=4.2)
 (gg.location.grid | gg.location) + 
-  plot_layout(widths=c(1, 0.4)) +
+  plot_layout(widths=c(1, 0.3)) +
   plot_annotation(tag_levels="a") & 
   theme(plot.tag=element_text(face="bold"))
 dev.off()
@@ -250,7 +273,7 @@ element.cargo.count <- element.cargo.df %>%
   mutate(value=as.numeric(1)) %>%
   pivot_wider(names_from="elementID", values_fill=as.numeric(0)) %>%
   mutate(category=NA) %>%
-  dplyr::select(orthogroup, category, everything())
+  dplyr::select(orthogroup, category, rev(tree.levels))
 
 #Categorise genes as accessory/specific to elements
 progress.bar <- txtProgressBar(1, nrow(element.cargo.count), initial=0, char="=", style=3)
@@ -285,6 +308,7 @@ gg.upset.summary <-
     width_ratio=0.2,
     height_ratio=2.2,
     min_size=5,
+    sort_sets=FALSE,
     sort_intersections_by=c("degree", "cardinality"),
     guides="over",
     matrix=
@@ -314,7 +338,8 @@ gg.upset.summary <-
       ),
     set_sizes=
       upset_set_size(geom=geom_bar(aes(fill=category, x=group), width=0.7),
-                     position='right') + 
+                     position="right") + 
+      scale_y_continuous(limits=c(0, 150)) +
       scale_fill_manual(values=c("#e69f00", "#a58337")) +
       ylab("Total number\nof genes") +
       theme(axis.title.x=element_text(size=7),
@@ -354,12 +379,24 @@ gg.upset.summary <-
   ) +
   ggpreview(width=4, height=3.2)
 
+#Make tree to plot alongside
+tree.backbone.upset <- drop.tip(
+  tree.backbone,
+  c("Gt-19d1_s00091", "Gt-8d_s00067", "Gt-4e_s00054", "Gt-LH10_s00089")
+)
+
+#Plot base tree
+gg.tree.upset <- ggtree(tree.backbone.upset, branch.length="none", lwd=0.2) +
+  xlim(0, 8)
+
 #Write to file
 pdf(file=paste0("R:/GaeumannomycesStarships/shared_orthos-",
                 Sys.Date(), ".pdf"),
-    height=3.2, width=4)
-gg.upset.summary
+    height=3.2, width=4.5)
+((plot_spacer() / gg.tree.upset) + plot_layout(heights=c(1, 2.2)) |
+  gg.upset.summary) + plot_layout(widths=c(0.1, 1))
 dev.off()
+
 
 ## Supplementary upset plot (accessory cargo) ##
 
@@ -373,7 +410,7 @@ upset.clades <- data.frame(
 #Filter cargo presence absence for accessory genes (i.e. in at least two elements)
 element.cargo.accessory.count <- element.cargo.count %>%
   filter(category == "accessory") %>%
-  dplyr::select(orthogroup, matches(upset.clades$set))
+  dplyr::select(orthogroup, rev(tree.levels))
 
 #Generate upset data for accessory genes
 element.cargo.accessory.upset <- 
@@ -472,7 +509,8 @@ gg.upset.accessory <-
 pdf(file=paste0("R:/GaeumannomycesStarships/shared_orthos_all-",
                 Sys.Date(), ".pdf"),
     height=4, width=7.5)
-gg.upset.all.member.size / gg.upset.accessory + plot_layout(heights=c(0.5, 2))
+(((plot_spacer() / gg.tree) + plot_layout(heights=c(2.2, 2.5)) |
+    (gg.upset.all.member.size / gg.upset.accessory + plot_layout(heights=c(0.5, 2)))) + plot_layout(widths=c(0.1, 2)))
 dev.off()
 
 
@@ -486,7 +524,7 @@ element.cargo.clade.count <- element.cargo.df %>%
   distinct() %>%
   mutate(value=as.numeric(1)) %>%
   pivot_wider(names_from="clade", values_fill=as.numeric(0)) %>%
-  dplyr::select(orthogroup, c("Ga", "GtA", "GtB")) %>%
+  dplyr::select(orthogroup, c("GtA", "Ga", "GtB")) %>%
   dplyr::rename("<i>Gt</i>B"="GtB", "<i>Gt</i>A"="GtA", "<i>Ga</i>"="Ga")
 
 #Plot upset plot at species-level
@@ -564,6 +602,128 @@ pdf(file=paste0("R:/GaeumannomycesStarships/shared_orthos_clades-",
                 Sys.Date(), ".pdf"),
     height=1, width=1.5)
 gg.upset.clades
+dev.off()
+
+
+###################################
+## CARGO HIERARCHICAL CLUSTERING ##
+###################################
+
+#Normalise cargo gene presence-absence matrix
+element.cargo.grid <- element.cargo.count %>%
+  dplyr::select(-category) %>%
+  column_to_rownames("orthogroup") %>%
+  t() %>%
+  scale()
+
+#Make distance matrix
+element.cargo.dist <- dist(element.cargo.grid, method="euclidean")
+
+#Do hierarchical clustering
+element.cargo.hclust <- hclust(element.cargo.dist, method="complete")
+
+#Convert to trees
+tree.clust <- as.phylo(element.cargo.hclust)
+
+#Root element and hclust trees
+outgroups <- c("Gt-19d1_s00091", "Gt-8d_s00067")
+tree.backbone.rooted <- root(tree.backbone, 
+                             outgroups,
+                             resolve.root=TRUE,
+                             edgelabel=TRUE)
+tree.clust.rooted <- root(tree.clust,
+                          outgroups,
+                          resolve.root=TRUE,
+                          edgelabel=TRUE)
+
+#Make tanglegram
+tanglegram <- cophylo(tree.backbone.rooted, tree.clust.rooted)
+
+#Extract tanglegram trees
+tree.backbone.untangled <- tanglegram$trees[[1]]
+tree.clust.untangled <- tanglegram$trees[[2]]
+
+#Plot trees
+for (status in c("tree.backbone", "tree.clust")) {
+  
+  tree.untangled <- get(paste0(status, ".untangled"))
+  other.untangled <- get(paste0(c("tree.backbone", "tree.clust")[which(!c("tree.backbone", "tree.clust") %in% status)], ".untangled"))
+  
+  #Plot base tree
+  gg.tree <- ggtree(tree.untangled, branch.length="none", lwd=0.2, ladderize=FALSE) +
+    scale_y_continuous(expand=c(0, 0.5)) +
+    theme(plot.title=element_text(hjust=0.5, size=7, face="bold"),
+          plot.margin=margin(5.5, 0, 0, 0))
+  
+  #Flip hclust tree and add title
+  if (status == "tree.clust") {
+    
+    gg.tree2 <- gg.tree +
+      scale_x_reverse() +
+      xlim(30, 0) +
+      new_scale_colour() +
+      geom_tiplab(geom="label",
+                  fill="white",
+                  size=1.8,
+                  offset=-15,
+                  linesize=0.2,
+                  label.size=NA,
+                  align=TRUE) +
+      ggtitle("Cargo genes hclust")
+    
+  } else {
+    
+    gg.tree2 <- gg.tree +
+      xlim(0, 23) +
+      new_scale_colour() +
+      geom_tiplab(geom="label",
+                  fill="white",
+                  size=1.8,
+                  offset=12,
+                  hjust=1,
+                  linesize=0.2,
+                  label.size=NA,
+                  align=TRUE) +
+      ggtitle("Element kmer tree")
+    
+  }
+  
+  assign(paste0("gg.", status), gg.tree2)
+  
+}
+
+#Make dataframe for connecting lines
+lines.df <- 
+  data.frame(
+    label1=gg.tree.backbone$data$label[gg.tree.backbone$data$isTip == TRUE],
+    label2=gg.tree.clust$data$label[match(gg.tree.backbone$data$label[gg.tree.backbone$data$isTip == TRUE],
+                                          gg.tree.clust$data$label[gg.tree.clust$data$isTip == TRUE])],
+    y1=gg.tree.backbone$data$y[gg.tree.backbone$data$isTip == TRUE],
+    y2=gg.tree.clust$data$y[match(gg.tree.backbone$data$label[gg.tree.backbone$data$isTip == TRUE],
+                                  gg.tree.clust$data$label[gg.tree.clust$data$isTip == TRUE])]
+  )
+
+#Plot lines and labels
+gg.lines <- ggplot(lines.df) +
+  geom_segment(aes(x=0, y=y1, xend=1, yend=y2),
+               lwd=0.2,
+               lty="dashed") +
+  scale_y_continuous(expand=c(0, 0.5)) +
+  scale_x_continuous(expand=c(0, 0)) +
+  theme_void() +
+  theme(legend.position="none")
+
+#Combine into tanglegram
+gg.tanglegram <- plot_grid(gg.tree.backbone, gg.lines, gg.tree.clust,
+                           ncol=3, rel_widths=c(1, 0.3, 1),
+                           align="h", axis="bt")
+
+ggpreview(gg.tanglegram, width=3, height=3)
+
+#Write to file
+pdf(file=paste0(dir.starship, "cargo_tanglegram-", Sys.Date(), ".pdf"),
+    height=3, width=3)
+gg.tanglegram
 dev.off()
 
 
@@ -726,27 +886,6 @@ bind_rows(mget(ls(pattern="sig.df.")))
 ## SCHEMATICS ##
 ################
 
-#Read in tree
-kmer.element.big.tree <- read.tree("R:/GaeumannomycesStarships/mashtree/starship_tree_big.bootstrap.tre")
-kmer.element.big.tree$tip.label <- sub("__.*", "", sub("gaeumannomyces.elements.id_", "", sub("mycodb.final.starships.id_", "", kmer.element.big.tree$tip.label)))
-kmer.element.big.tree$tip.label <- gsub("Gt-3aA1", "Ga-3aA1", gsub("Gt-CB1", "Ga-CB1", gsub("Gt14LH10", "Gt-LH10", kmer.element.big.tree$tip.label)))
-
-#Subset for Gaeumannomyces tips
-tree.backbone <- extract.clade(kmer.element.big.tree, 1116)
-tree.backbone <- drop.tip(
-  tree.backbone,
-  tree.backbone$tip.label[!tree.backbone$tip.label %in% elements.df$elementID]
-)
-
-#Plot base tree
-gg.tree <- ggtree(tree.backbone, branch.length="none", lwd=0.2) +
-  xlim(0, 10)
-
-tree.levels <- gg.tree$data %>%
-  filter(isTip) %>%
-  arrange(desc(y)) %>%
-  pull(label)
-
 #Combine TE and gene annotations
 all.annotations.df <- bind_rows(all.genes.df, all.tes.df) %>%
   mutate(ID=paste0(sub("-", "", ID), ".1"))
@@ -767,23 +906,6 @@ element.genes <- elements.df %>%
   mutate(seq_id=sub("Ga-3aA1_s00046,Ga-3aA1_s00047", "Ga-3aA1_s00046", elementID),
          seq_id=sub("^Ga-3aA1_s00047$", "Ga-3aA1_s00046", seq_id),
          seq_id=factor(seq_id, levels=tree.levels))
-
-#Read in BLAST results
-# blast.files <- Sys.glob(paste0(dir.starship, "blasts/*.tsv"))
-# blast.files <- blast.files[file.size(blast.files) > 0]
-# blasts.df <- do.call("rbind", lapply(
-#   blast.files,
-#   function(fn)
-#     data.frame(read.csv(fn, sep="\t", header=FALSE))
-# )) %>%
-#   dplyr::rename(accession="V1", ID="V2", evalue="V3", bitscore="V4", pident="V5", length="V6") %>%
-#   mutate(gene=recode(accession,
-#                      mp102_11352="FRE",
-#                      mp102_11357="PLP",
-#                      `JX560967.1`="Spok1",
-#                      `sp|B2AFA8.2|SPOK2_PODAN`="Spok2",
-#                      `MK521588.1`="Spok3",
-#                      `MK521589.1`="Spok4"))
 
 #Make dataframe of domains previously identified in element cargos
 pfams <- data.frame(
