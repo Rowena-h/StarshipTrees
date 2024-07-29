@@ -722,3 +722,58 @@ pdf(file=paste0(dir.starship, "starship_kmer_big_tree_family_summary-", Sys.Date
     height=4, width=4)
 gg.kmer.element.big.family.tree3
 dev.off()
+
+
+##################################
+## TAXONOMIC CLASS DISTRIBUTION ##
+##################################
+
+#Percentage of explored genomes with elements in Gluck-Thaler et al (2024)
+class.elements.df <- metadata.tmp %>% 
+  filter(class != "") %>%
+  mutate(element=ifelse(genomeCode %in% metadata.all$genomeCode, "Y", "N")) %>%
+  group_by(class) %>% summarise(elements=sum(element == "Y"), total=n()) %>%
+  mutate(prop=elements/total) %>%
+  arrange(desc(prop), desc(total), class) %>%
+  filter(elements > 0)
+
+gg.class.prop <- ggplot(class.elements.df, aes(x=prop, y=fct_reorder(class, prop), fill=class)) +
+  geom_bar(stat="identity") +
+  geom_text(aes(label=paste0(round(prop*100), "%")),
+            size=2, hjust=-0.3) +
+  scale_fill_manual(values=c('#7BAFDE','#D1BBD7', '#4EB265',
+                             '#CAE0AB', '#F7F056', '#F4A736', '#DC050C')) +
+  scale_x_continuous(limits=c(0, 1),
+                     expand=c(0, 0),
+                     labels=scales::label_percent()) +
+  labs(x="Percentage of explored genomes with element(s)\n(Gluck-Thaler et al. 2024)", y=NULL) +
+  theme(legend.position="none",
+        axis.title=element_text(size=6),
+        axis.text.y=element_text(size=6, face="italic"),
+        axis.text.x=element_text(size=6),
+        panel.grid.major.y=element_blank(),
+        plot.margin=margin(5.5, 10, 5.5, 5.5)) +
+  ggpreview(width=3, height=2)
+
+gg.class.total <- ggplot(class.elements.df, aes(x=total, y=fct_reorder(class, prop), fill=class)) +
+  geom_bar(stat="identity") +
+  geom_text(aes(label=total),
+            size=2, hjust=-0.3) +
+  scale_fill_manual(values=c('#7BAFDE','#D1BBD7', '#4EB265',
+                             '#CAE0AB', '#F7F056', '#F4A736', '#DC050C')) +
+  scale_x_continuous(expand=expansion(mult=c(0, 0.15))) +
+  labs(x="Total explored genomes\n(Gluck-Thaler et al. 2024)", y=NULL) +
+  theme(legend.position="none",
+        axis.title=element_text(size=6),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        axis.text.x=element_text(size=6),
+        panel.grid.major.y=element_blank(),
+        plot.margin=margin(5.5, 10, 5.5, 5.5)) +
+  ggpreview(width=3, height=2)
+
+#Write to file
+pdf(file=paste0(dir.starship, "gluckthaler2024_classes-", Sys.Date(), ".pdf"),
+    height=2, width=5)
+plot_grid(gg.class.prop, gg.class.total, rel_widths=c(1,0.75))
+dev.off()
