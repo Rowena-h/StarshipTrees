@@ -6,6 +6,7 @@ library(ggnewscale)   #0.4.10
 library(ggtree)       #3.9.1
 library(ggtreeExtra)  #1.10.0
 library(glottoTrees)  #0.1.10
+library(phangorn)     #2.11.1
 library(phytools)     #2.1-1
 library(tgutil)       #0.1.15
 
@@ -20,14 +21,14 @@ dir.starship <- "R:/GaeumannomycesStarships/"
 
 #Read in tree
 kmer.element.tree <- 
-  read.tree("R:/GaeumannomycesStarships/mashtree/starship_tree.bootstrap.tre")
+  read.tree(paste0(dir.starship, "mashtree/starship_tree.bootstrap.tre"))
 kmer.element.tree$tip.label <- 
   sub("__.*", "",
       sub("gaeumannomyces.elements.id_", "",
           sub("Starships.id_", "", kmer.element.tree$tip.label)))
 
 #Read in metadata
-metadata <- read.csv(paste0("R:/GaeumannomycesStarships/metadata.csv")) %>%
+metadata <- read.csv(paste0(dir.starship, "/metadata.csv")) %>%
   mutate(genus=word(species, 1))
 
 #Plot tree
@@ -345,6 +346,14 @@ pdf(file=paste0(dir.starship, "starship_fig1-", Sys.Date(), ".pdf"),
 plot_grid(gg.kmer.element.tree, gg.tanglegram,
           rel_widths=c(4, 3), labels="auto")
 dev.off()
+
+#Calculate topological distance of captain tree from element tree
+kmer.element.tree.drop.rooted <- drop.tip(kmer.element.tree.rooted, c("Bdot_Voyager", "Mpha_Derelict"))
+RF.dist(kmer.element.tree.drop.rooted, ml.cap.tree.rooted, normalize=TRUE)
+#Number of bipartitions that differ
+print(paste0(RF.dist(unroot(ml.cap.tree.rooted), unroot(kmer.element.tree.drop.rooted), normalize=TRUE) *
+               length(bitsplits(unroot(kmer.element.tree.drop.rooted))[3]$freq), "/",
+             length(bitsplits(unroot(kmer.element.tree.drop.rooted))[3]$freq)))
 
 
 #######################################################
