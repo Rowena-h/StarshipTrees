@@ -2,11 +2,17 @@
 library(tidyverse)    #2.0.0
 library(ape)          #5.7-1
 library(ComplexUpset) #1.3.3
+library(cowplot)      #1.1.3
 library(ggforce)      #0.4.2
 library(gggenomes)    #1.0.0
+library(ggnewscale)   #0.4.10
+library(ggpubr)       #0.6.0
+library(ggrepel)      #0.9.5
 library(ggtree)       #3.9.1
 library(matrixStats)  #1.3.0
 library(patchwork)    #1.2.0
+library(phangorn)     #2.11.1
+library(phytools)     #2.1-1
 library(scales)       #1.3.0
 library(tgutil)       #0.1.15
 library(topGO)        #2.52.0
@@ -198,8 +204,8 @@ gg.location.grid <- ggplot(element.cargo.location.df, aes(x=inside, y=outside)) 
             aes(x=x, y=y, label=label),
             vjust=1.7, size=2, fontface="italic") +
   coord_cartesian(clip="off") +
-  labs(x="Genes only inside element",
-       y="Genes with copies also outside element") +
+  labs(x="Orthologous genes only inside element",
+       y="Orthologous genes also outside element") +
   scale_x_discrete(position="top") +
   scale_y_discrete(position="right") +
   scale_fill_gradient(low="white", high="#a58337") +
@@ -234,13 +240,13 @@ gg.location <- ggplot(cargo.location.counts.df, aes(x=num.orthos, y=element)) +
   scale_fill_manual(values=c("#4B854C", "#C3D6C3"),
                     labels=c("also outside", "only inside")) +
   coord_cartesian(clip="off", xlim=c(0, 150)) +
-  labs(x="Total number\nof genes", y=NULL, fill="Location of all\ngene copies") +
+  labs(x="Total number\nof orthogroups", y=NULL, fill="Location of all\northogroup copies") +
   theme_minimal() +
   theme(axis.title.x=element_text(size=7), 
         axis.text.x=element_text(size=5),
         axis.text.y=element_text(size=5, margin=margin(r=-1)),
         axis.ticks.x=element_line(),
-        legend.position=c(0.5, 1.2),
+        legend.position=c(0.2, 1.2),
         legend.key.size=unit(7, "pt"),
         legend.title=element_text(size=7, face="bold"),
         legend.text=element_text(size=7),
@@ -341,7 +347,7 @@ gg.upset.summary <-
                      position="right") + 
       scale_y_continuous(limits=c(0, 150)) +
       scale_fill_manual(values=c("#e69f00", "#a58337")) +
-      ylab("Total number\nof genes") +
+      ylab("Total number\nof orthogroups") +
       theme(axis.title.x=element_text(size=7),
             axis.text.x=element_text(size=5),
             axis.ticks.x=element_line(),
@@ -350,7 +356,7 @@ gg.upset.summary <-
             panel.grid=element_blank()),
     base_annotations=
       list(
-        'Genes in\nintersection'=
+        'Orthogroups in\nintersection'=
           intersection_size(mapping=aes(fill=category),
                             width=0.7,
                             text=list(size=1.5),
@@ -362,7 +368,7 @@ gg.upset.summary <-
     themes=
       upset_modify_themes(
         list(
-          'Genes in\nintersection'=upset_default_themes(
+          'Orthogroups in\nintersection'=upset_default_themes(
             axis.title.y=element_text(size=7),
             axis.text.y=element_blank(),
             panel.grid.major.y=element_blank(),
@@ -396,6 +402,16 @@ pdf(file=paste0("R:/GaeumannomycesStarships/shared_orthos-",
 ((plot_spacer() / gg.tree.upset) + plot_layout(heights=c(1, 2.2)) |
   gg.upset.summary) + plot_layout(widths=c(0.1, 1))
 dev.off()
+
+#Proportion of specific genes
+element.cargo.count %>% 
+  pivot_longer(!c(orthogroup,category), names_to="element", values_to="count") %>% 
+  filter(count > 0) %>%
+  group_by(element, category) %>% 
+  summarise(count=n()) %>% 
+  pivot_wider(id_cols="element", names_from=category, values_from=count) %>% 
+  mutate(prop=specific/(accessory+specific)) %>%
+  arrange(desc(prop))
 
 
 ## Supplementary upset plot (accessory cargo) ##
@@ -479,7 +495,7 @@ gg.upset.accessory <-
                              'GtA'='darkgrey',
                              'GtB'='#888888')),
     base_annotations=list(
-      'Genes in\nintersection'=
+      'Orthogroups in\nintersection'=
         intersection_size(width=0.7,
                           text=list(size=1.5),
                           text_mapping=aes(colour='on_background',
@@ -488,7 +504,7 @@ gg.upset.accessory <-
     ),
     themes=upset_modify_themes(
       list(
-        'Genes in\nintersection'=upset_default_themes(
+        'Orthogroups in\nintersection'=upset_default_themes(
           axis.title.y=element_text(size=7),
           axis.text.y=element_blank(),
           panel.grid.major.y=element_blank(),
@@ -650,7 +666,7 @@ for (status in c("tree.backbone", "tree.clust")) {
   other.untangled <- get(paste0(c("tree.backbone", "tree.clust")[which(!c("tree.backbone", "tree.clust") %in% status)], ".untangled"))
   
   #Plot base tree
-  gg.tree <- ggtree(tree.untangled, branch.length="none", lwd=0.2, ladderize=FALSE) +
+  tree.tmp <- ggtree(tree.untangled, branch.length="none", lwd=0.2, ladderize=FALSE) +
     scale_y_continuous(expand=c(0, 0.5)) +
     theme(plot.title=element_text(hjust=0.5, size=7, face="bold"),
           plot.margin=margin(5.5, 0, 0, 0))
@@ -658,7 +674,7 @@ for (status in c("tree.backbone", "tree.clust")) {
   #Flip hclust tree and add title
   if (status == "tree.clust") {
     
-    gg.tree2 <- gg.tree +
+    tree.tmp2 <- tree.tmp +
       scale_x_reverse() +
       xlim(30, 0) +
       new_scale_colour() +
@@ -669,11 +685,11 @@ for (status in c("tree.backbone", "tree.clust")) {
                   linesize=0.2,
                   label.size=NA,
                   align=TRUE) +
-      ggtitle("Cargo genes hclust")
+      ggtitle("Cargo orthogroups hclust")
     
   } else {
     
-    gg.tree2 <- gg.tree +
+    tree.tmp2 <- tree.tmp +
       xlim(0, 23) +
       new_scale_colour() +
       geom_tiplab(geom="label",
@@ -688,7 +704,7 @@ for (status in c("tree.backbone", "tree.clust")) {
     
   }
   
-  assign(paste0("gg.", status), gg.tree2)
+  assign(paste0("gg.", status), tree.tmp2)
   
 }
 
@@ -725,6 +741,13 @@ pdf(file=paste0(dir.starship, "cargo_tanglegram-", Sys.Date(), ".pdf"),
     height=3, width=3)
 gg.tanglegram
 dev.off()
+
+#Calculate topological distance of hierarchical clustering from element tree
+RF.dist(tree.clust.rooted, tree.backbone.rooted, normalize=TRUE)
+#Number of bipartitions that differ
+print(paste0(RF.dist(unroot(tree.clust.rooted), unroot(tree.backbone.rooted), normalize=TRUE) *
+               length(bitsplits(unroot(tree.backbone.rooted))[3]$freq), "/",
+             length(bitsplits(unroot(tree.backbone.rooted))[3]$freq)))
 
 
 ###############################
@@ -788,7 +811,7 @@ element.cargo.matrix <- t(element.cargo.count %>%
 #Get data for accumulation curves
 element.cargo.accumulation.df <- accumulation_curves(element.cargo.matrix, curve="pan")
 
-pan.num <- accumulation.df$mean[which(accumulation.df$genomes == 28)]
+pan.num <- element.cargo.accumulation.df$mean[which(element.cargo.accumulation.df$genomes == 28)]
 
 #Make function for dynamic axis labels
 addUnits <- function(n) {
@@ -898,8 +921,6 @@ element.genes <- elements.df %>%
   mutate(category=ifelse("transposable_element_gene" == biotype & !is.na(biotype),
                          "transposable_element_gene", category),
          category=sub("\\.", "gene", category),
-         category=ifelse(is.na(orthogroups.stats$CSEP[match(orthogroup, orthogroups.stats$orthogroup)]),
-                         category, "CSEP"),
          category=ifelse(is.na(orthogroups.stats$CAZyme[match(orthogroup, orthogroups.stats$orthogroup)]),
                          category, "CAZyme")) %>%
   dplyr::select(elementID, feat_id="ID", category, start, end, orthogroup) %>%
@@ -907,12 +928,15 @@ element.genes <- elements.df %>%
          seq_id=sub("^Ga-3aA1_s00047$", "Ga-3aA1_s00046", seq_id),
          seq_id=factor(seq_id, levels=tree.levels))
 
-#Make dataframe of domains previously identified in element cargos
+
+## FUNCTIONAL INFO ##
+  
+#Make dataframe of domains previously identified in element cargos/of interest
 pfams <- data.frame(
   Pfam=c("PF12520", "PF01794", "PF08022", "PF08030",
-         "PF01734", "PF17107", "PF05729", "PF12796", "PF00023", "PF06985"),
+         "PF01734", "PF17107", "PF05729", "PF00931", "PF12796", "PF00023", "PF06985"),
   domain.name=c("DUF3723", "Ferric_reduc", "FAD_binding_8", "NAD_binding_6",
-                "Patatin", "SesA", "NACHT", "Ank_2", "Ank", "HET")
+                "Patatin", "SesA", "NACHT", "NB-ARC", "Ank_2", "Ank", "HET")
 )
 
 #Add domain names to AHRD dataframe
@@ -927,50 +951,120 @@ ahrds.df <- ahrds.df %>%
 
 #Add functional info to element genes dataframe
 element.genes.func <- element.genes %>%
-  mutate(domain=str_trim(ahrds.df$domain.name[match(feat_id, sub("-", "", ahrds.df$Protein.Accession))]),
-         category=ifelse(!is.na(domain) & category == "gene",
-                         paste0(domain, " domain"), category))
+  mutate(domain=str_trim(ahrds.df$domain.name[match(feat_id, sub("-", "", ahrds.df$Protein.Accession))]))
 
 #Most common genes/domains (in >=50% elements)
-element.genes.func.sum <- element.genes.func %>%
-  filter(!category %in% c("gene", "transposable_element_gene")) %>%
-  group_by(category) %>%
+element.genes.domain.sum <- element.genes.func %>%
+  filter(!is.na(domain)) %>%
+  group_by(domain) %>%
   summarise(num.elements=n_distinct(elementID)) %>%
   arrange(desc(num.elements)) %>%
   mutate(prop=num.elements/length(unique(element.cargo.df$elementID))) %>%
   filter(prop >= 0.5)
 
-#Most common domains in general
-ahrds.df %>%
-  mutate(strain=sub("_.*", "", Protein.Accession)) %>%
-  filter(!is.na(domain.name)) %>%
-  group_by(strain, domain.name) %>%
-  summarise(num=n()) %>%
-  arrange(strain, desc(num)) %>%
-  slice_head(n=5) %>%
-  print(n=45)
-
-#Plot bar graph of common genes/domains
-gg.func.sum <- ggplot(element.genes.func.sum, aes(x=prop, y=fct_reorder(category, prop))) +
-  geom_bar(aes(fill=category), stat="identity") +
+#Plot bar graph of common domains in elements
+gg.domain.sum <- ggplot(element.genes.domain.sum, aes(x=prop, y=fct_reorder(domain, prop))) +
+  geom_bar(stat="identity") +
   scale_x_continuous(limits=c(0, 1),
                      expand=c(0, 0),
                      labels=label_percent()) +
-  scale_y_discrete(label=rev(c("Captain", "CAZyme", "Ank Rep domain", "Zn(2)-C6 domain", "HTH CENPB-type domain", "HET domain"))) +
-  scale_fill_manual(values=c("#E65518", "#F4A736", "#CAE0AB", "#7BAFDE", "#4EB265", "#1965B0"),
-                    breaks=c("cap", "CAZyme", "ANK_REP_REGION domain",
-                             "Zn(2)-C6 fungal-type domain", "HTH CENPB-type domain", "HET domain"),
-                    limits=c("cap", "CAZyme", "ANK_REP_REGION domain",
-                             "Zn(2)-C6 fungal-type domain", "HTH CENPB-type domain", "HET domain")) +
-  labs(x="Proportion of elements with gene/domain", y=NULL) +
+  labs(x="Proportion of elements with domain", y=NULL, title="Domains in at least 50% of elements") +
   theme_minimal() +
   theme(legend.position="none",
         axis.title=element_text(size=6),
         axis.text=element_text(size=6),
         axis.ticks.y=element_blank(),
         panel.grid.major.y=element_blank(),
+        plot.title=element_text(size=6, face="bold"),
         plot.margin=margin(5.5, 10, 5.5, 5.5)) +
   ggpreview(width=2.5, height=1.5)
+
+#Most common domains in general
+domains.df <- ahrds.df %>%
+  mutate(strain=sub("_.*", "", Protein.Accession)) %>%
+  filter(!is.na(domain.name)) %>%
+  group_by(strain, domain.name) %>%
+  summarise(num=n()) %>%
+  arrange(strain, desc(num)) %>%
+  slice_head(n=5)
+
+#Plot bar graph of common domains across whole genome
+gg.domain.all.sum <- ggplot(domains.df, aes(x=num, y=fct_reorder(domain.name, num))) +
+  geom_boxplot(linewidth=0.3, outlier.size=0.3) +
+  labs(x="Number of genes with domain", y=NULL, title="Most common domains in genome") +
+  theme_minimal() +
+  theme(legend.position="none",
+        axis.title=element_text(size=6),
+        axis.text=element_text(size=6),
+        axis.ticks.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        plot.title=element_text(size=6, face="bold"),
+        plot.margin=margin(5.5, 10, 5.5, 5.5)) +
+  ggpreview(width=2.5, height=1.5)
+
+#Write to file
+pdf(paste0("R:/GaeumannomycesStarships/domains-",
+           Sys.Date(), ".pdf"),
+    width=5, height=1.5)
+plot_grid(gg.domain.sum, gg.domain.all.sum, labels="auto")
+dev.off()
+
+#Look at function of common orthogroups (in >=50% elements)
+common.genes <- element.cargo.accessory.upset.members$orthogroup[element.cargo.accessory.upset.members$num >= 10]
+common.genes.df <- genes.df %>%
+  filter(strain %in% c("GtLH10", "Gt-23d", "Gt-4e", "Gt-8d", "Gt-19d1", "Gt-CB1", "Gt-3aA1"),
+         orthogroup %in% common.genes) %>%
+  left_join(ahrds.df, by="gene") %>%
+  arrange(orthogroup)
+orthogroups.stats[orthogroups.stats$orthogroup %in% common.genes, c(1:11)]
+
+#Read in BLAST results
+blast.files <- Sys.glob(paste0(dir.starship, "blasts/*phi-base*.tsv"))
+blast.files <- blast.files[file.size(blast.files) > 0]
+blasts.df <- do.call("rbind", lapply(
+  blast.files,
+  function(fn)
+    data.frame(read.csv(fn, sep="\t", header=FALSE))
+)) %>%
+  dplyr::rename(accession="V1", ID="V2", evalue="V3", bitscore="V4", pident="V5", length="V6") %>%
+  filter(pident > 50) %>%
+  arrange(ID, desc(bitscore)) %>%
+  group_by(ID) %>%
+  slice_head(n=1)
+
+#Read in phi-base metadata
+phibase.df <- read.csv(paste0(dir.starship, "blasts/phi-base_240801.csv"), skip=1)
+
+#Match phi-base blast hits to orthogroups
+genes.cargo.pb.df <- genes.df %>%
+  mutate(biotype=orthogroups.stats$biotype[match(orthogroup, orthogroups.stats$orthogroup)]) %>%
+  filter(is.na(biotype),
+         gene %in% element.cargo.df$gene) %>%
+  mutate(blast.hit=blasts.df$accession[match(gene, sub("-", "", blasts.df$ID))],
+         pb.id=sub("#.*", "", sub(".*PHI:", "PHI:", blast.hit)),
+         pb.gene=phibase.df$Gene[match(pb.id, phibase.df$PHI_MolConn_ID)],
+         pb.function=phibase.df$Gene.Function[match(pb.id, phibase.df$PHI_MolConn_ID)],
+         pb.species=phibase.df$Pathogen.species[match(pb.id, phibase.df$PHI_MolConn_ID)],
+         pb.phen=phibase.df$Mutant.Phenotype[match(pb.id, phibase.df$PHI_MolConn_ID)]) %>%
+  arrange(orthogroup)
+
+#Find orthogroups with at least 50% of genes with a phi-base hit
+orthogroups.pb <- genes.cargo.pb.df %>%
+  group_by(orthogroup) %>%
+  summarise(num=n(),
+            num.pb=sum(!is.na(pb.gene))) %>%
+  mutate(prop=num.pb/num) %>%
+  filter(prop >= 0.5) %>%
+  pull(orthogroup)
+orthogroups.pb.df <- genes.cargo.pb.df %>%
+  filter(orthogroup %in% orthogroups.pb,
+         !is.na(pb.gene),
+         !pb.gene %in% c("FvCpsA")) %>%
+  mutate(pb.gene=sub(" \\(.*", "", pb.gene),
+         pb.label=paste0(pb.gene, "-like")) %>%
+  dplyr::select(orthogroup, pb.gene, pb.label) %>%
+  unique() %>%
+  print(n=30)
 
 #Which CSEPs in elements
 orthogroups.stats %>%
@@ -981,10 +1075,37 @@ orthogroups.stats %>%
   filter(orthogroup %in% element.genes$orthogroup,
          !is.na(CAZyme))
 
-#Keep only most common/interesting categories for plotting
-element.genes <- element.genes.func %>%
-  mutate(category=ifelse(category %in% c(element.genes.func.sum$category, "CSEP", "tyr", "transposable_element_gene"),
-                         category, "gene"))
+#Make dataframe of presence of features previously identified in element cargos/of interest
+func.sum.df <- data.frame(gene=c("DUF3723", "FRE", "PLP", "Spok (1-4)", "ToxA", "BGC", "NACHT domain-containing"),
+                          presence=c(0, 0, 0, 0, 0, 0, 1))
+
+#Plot table
+gg.tab <- ggtexttable(func.sum.df, 
+                      rows=NULL,
+                      cols=c("Gene/feature", "Number"),
+                      theme=ttheme(base_size=6,
+                                   padding=unit(c(6, 2), "mm"))) %>%
+  table_cell_bg(row=c(8), column=2,
+              linewidth=2, fill="#CAE0AB", color="white") %>%
+  table_cell_font(row=c(8), column=c(1, 2), size=6, face="bold")
+
+
+## SCHEMATICS ##
+
+#Add functions to element cargo and keep only most common/interesting categories for plotting
+element.genes.func <- element.genes.func %>%
+  mutate(category=ifelse(orthogroup %in% "N0.HOG0000073",
+                         "GT2 CAZyme", category),
+         category=ifelse(orthogroup %in% c("N0.HOG0000176", "N0.HOG0000260", "N0.HOG0010081"),
+                         "FUG1", category),
+         func=ifelse(grepl("NACHT", domain) & category == "gene",
+                     "NACHT domain-containing",
+                     NA),
+         func=ifelse(is.na(orthogroups.stats$CSEP[match(orthogroup, orthogroups.stats$orthogroup)]),
+                     func, "CSEP"),
+         func=ifelse(category == "gene" & is.na(func),
+                     orthogroups.pb.df$pb.label[match(orthogroup, orthogroups.pb.df$orthogroup)],
+                     func))
 
 #Get flanking repeats
 element.flanks <- elements.df %>% 
@@ -1007,7 +1128,7 @@ element.nested <- elements.df %>%
   mutate(seq_id=factor(seq_id, levels=tree.levels))
 
 #Combine genes and repeats
-element.feats <- bind_rows(element.genes, element.flanks)
+element.feats <- bind_rows(element.genes.func, element.flanks)
 
 #Plot preliminary schematic and flip element so captains are always first
 gg.element.schematic.tmp <- gggenomes(genes=element.feats, feats=element.nested) %>%
@@ -1022,46 +1143,65 @@ gg.element.schematic.tmp <- gggenomes(genes=element.feats, feats=element.nested)
         "Gh-1B17_s00001")
   ))
 
-#Pull sequence coordinates
-element.seqs <- gg.element.schematic.tmp %>% 
+#Pull sequence and gene coordinates
+element.seqs <- gg.element.schematic.tmp %>%
   get_seqs()
+element.genes.flip <- gg.element.schematic.tmp %>%
+  pull_genes()
+#Format orthologous genes
+element.orthos <- genes.df %>% 
+  dplyr::select(cluster_id=orthogroup, feat_id=gene)
 
 #Add all tracks to schematic
-gg.element.schematic <- gggenomes(seqs=element.seqs) +
+gg.element.schematic <- gggenomes(seqs=element.seqs, genes=element.genes.flip) |>
+  add_clusters(element.orthos) +
+  geom_link_line(colour="grey90", linewidth=0.3) +
   geom_feat(data=gg.element.schematic.tmp %>%
-               pull_feats(),
+              pull_feats(),
             colour="#F7F056", linewidth=5) +
   geom_feat_text(data=gg.element.schematic.tmp %>%
                    pull_feats(),
-                 label="Ga-3aA1_s00047", size=2, nudge_y=-0.8, nudge_x=130000) +
+                 label="Ga-3aA1_s00047", size=2, nudge_y=-0.7, nudge_x=100000) +
   geom_seq(linewidth=0.3) +
   geom_bin_label(data=gg.element.schematic.tmp %>%
                    pull_bins(),
                  size=2) +
-  geom_gene(data=gg.element.schematic.tmp %>%
-              pull_genes(),
-            aes(fill=category),
+  geom_gene(aes(fill=category),
             shape=0,
             colour=NA) +
-  scale_fill_manual(values=c("#E65518", "lightgrey", "#AE76A3", "#F4A736",
-                             "#CAE0AB", "#7BAFDE", "#4EB265", "#1965B0", "dimgrey", "#FDDBC7",
-                             "white", "white"),
-                    breaks=c("cap", "gene", "CSEP", "CAZyme", "ANK_REP_REGION domain",
-                             "Zn(2)-C6 fungal-type domain", "HTH CENPB-type domain",
-                             "HET domain", "transposable_element_gene", "tyr"),
-                    limits=c("cap", "gene", "CSEP", "CAZyme", "ANK_REP_REGION domain",
-                             "Zn(2)-C6 fungal-type domain", "HTH CENPB-type domain",
-                             "HET domain", "transposable_element_gene", "tyr"),
-                    labels=c("cap", "gene", "CSEP", "CAZyme", "Ank Rep domain",
-                             "Zn(2)-C6 domain", "HTH CENPB-type domain",
-                             "HET domain", "TE", "tyr")) +
+  geom_label_repel(data=gg.element.schematic.tmp %>%
+               pull_genes() %>%
+               filter(!is.na(func)),
+             aes(x=(x+xend)/2, y=y+0.15, label=func),
+             nudge_y=0.3,
+             size=1.5,
+             fill="black",
+             colour="white",
+             fontface="bold",
+             segment.colour="black",
+             segment.size=0.3,
+             min.segment.length=0,
+             label.size=NA,
+             label.padding=unit(1.5, "pt"),
+             point.padding=NA,
+             box.padding=0,
+             direction="x") +
+  scale_fill_manual(values=c("#E65518", "grey", "#AE76A3", "#7BAFDE",
+                             "#F4A736", "dimgrey", "#FDDBC7",
+                           "white", "white"),
+                  breaks=c("cap", "gene", "GT2 CAZyme", "CAZyme",
+                           "FUG1", "transposable_element_gene", "tyr"),
+                  limits=c("cap", "gene", "GT2 CAZyme", "CAZyme",
+                           "FUG1", "transposable_element_gene", "tyr"),
+                  labels=c("captain", "gene", "GT2 CAZyme", "Other CAZyme",
+                           "FUG1-like", "TE", "tyrosine recombinase")) +
   scale_x_continuous(position="top",
                      breaks=pretty_breaks(),
                      labels=label_number(scale=1e-3, suffix=" Kbp")) +
   coord_cartesian(clip="off")
 
 #Get flanking repeats for custom shape plotting
-element.repeats <- gg.element.schematic.tmp %>% 
+element.repeats <- gg.element.schematic.tmp %>%
   get_seqs() %>%
   left_join(element.flanks, by="seq_id") %>%
   mutate(seq_id=factor(seq_id, levels=levels(element.genes$seq_id)),
@@ -1082,25 +1222,26 @@ gg.element.schematic.repeats <- gg.element.schematic +
   guides(fill=guide_legend(order=1),
          shape=guide_legend(order=2,
                             override.aes=list(size=1.6, stroke=0.6))) +
-  theme(legend.position=c(0.85, 0.73),
+  theme(legend.position=c(0.85, 0.75),
         legend.text=element_text(size=7, margin=margin(l=1, b=2)),
         legend.key.size=unit(8, "pt"),
         legend.title=element_blank(),
         legend.margin=margin(0,0,-10,0),
         strip.background=element_blank(),
         strip.text.y=element_text(size=8, face="bold", margin=margin(-5, 22, -5, 0)),
-        panel.spacing=unit(0, "lines"))
+        plot.margin=margin(5.5, 5.5, 5.5, 5.5),
+        panel.spacing=unit(0, "lines")) +
+  # annotation_custom(ggplotGrob(gg.tab),
+  #                   xmin=600000, xmax=700000,
+  #                   ymin=0, ymax=6) +
+  ggpreview(width=7, height=5)
 
 #Write to file
 pdf(paste0("R:/GaeumannomycesStarships/schematic-",
            Sys.Date(), ".pdf"),
-    width=7, height=4)
-(gg.tree | gg.element.schematic.repeats |
-    (plot_spacer() / gg.func.sum) +
-    plot_layout(heights=c(3, 1))) +
-  plot_layout(widths=c(1, 8, 3)) +
-  plot_annotation(tag_levels=list(c("a", ""))) & 
-  theme(plot.tag=element_text(face="bold"))
+    width=7, height=5)
+(gg.tree | gg.element.schematic.repeats) + 
+  plot_layout(widths=c(1, 12))
 dev.off()
 
 
