@@ -22,11 +22,11 @@ Input data was sourced from [Hill et al. (2024)](), [Gluck-Thaler et al. (2022)]
 
 Script to plot figures: `plot_trees.R`
 
-## Element cargo 
+## *Gaeumannomyces* element cargo exploration
 
-7. `sbatch 07_blast.sh` searches for previously reported genes in *Gaeumannomyces* element cargos using [BLAST](https://blast.ncbi.nlm.nih.gov/Blast.cgi).
+5. `sbatch 05_blast.sh` searches for previously reported genes and [PHI-base](http://www.phi-base.org/) genes in *Gaeumannomyces* element cargos using [BLAST](https://blast.ncbi.nlm.nih.gov/Blast.cgi).
 
-Script to plot figures: `plot_cargo.R`
+Script to plot figures: `plot_gaeumannomyces_cargo.R`
 
 ## Citation
 
