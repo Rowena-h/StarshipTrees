@@ -617,7 +617,7 @@ kmer.element.clades.tree.data <- big.tree.labels.data %>%
            substr(genus.label, 1, 3))) %>%
   select(tip.label, everything())
 
-#Make dataframes of captain families per clade
+#Make dataframe of captain families per clade
 grid.shapes <- big.tree.data %>%
   filter(!is.na(genus.node)) %>%
   arrange(y) %>%
@@ -633,11 +633,6 @@ grid.shapes <- big.tree.data %>%
   complete(tip.label, captain.family, fill=list(prop=0)) %>%
   filter(!is.na(captain.family)) %>%
   select(tip.label, captain.family, prop)
-
-grid.shapes.total <- grid.shapes %>%
-  group_by(tip.label) %>%
-  filter(prop > 0) %>%
-  summarise(other=n_distinct(captain.family))
 
 #Plot base tree
 gg.kmer.element.big.family.tree <- 
@@ -693,27 +688,6 @@ gg.kmer.element.big.family.tree3 <-
                               text.size=1.5,
                               hjust=0,
                               vjust=0.5)) +
-  geom_fruit(data=grid.shapes.total,
-             geom=geom_bar,
-             aes(y=tip.label,
-                 x=other),
-             stat="identity",
-             fill="dimgrey",
-             offset=0.1, 
-             pwidth=0.7) +
-  geom_fruit(data=grid.shapes.total,
-             geom=geom_label,
-             aes(y=tip.label,
-                 x=other,
-                 label=other),
-             stat="identity",
-             fill="dimgrey",
-             colour="white",
-             fontface="bold",
-             label.r=unit(0.5, "lines"),
-             size=1.5,
-             offset=-0.7, 
-             pwidth=0.7) +
   scale_fill_gradient(high="black", low="white",
                       breaks=c(0, 0.5, 1)) +
   labs(fill="Proportion of captain\nfamilies in clade") +
