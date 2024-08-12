@@ -1045,7 +1045,8 @@ genes.cargo.pb.df <- genes.df %>%
          pb.gene=phibase.df$Gene[match(pb.id, phibase.df$PHI_MolConn_ID)],
          pb.function=phibase.df$Gene.Function[match(pb.id, phibase.df$PHI_MolConn_ID)],
          pb.species=phibase.df$Pathogen.species[match(pb.id, phibase.df$PHI_MolConn_ID)],
-         pb.phen=phibase.df$Mutant.Phenotype[match(pb.id, phibase.df$PHI_MolConn_ID)]) %>%
+         pb.phen=phibase.df$Mutant.Phenotype[match(pb.id, phibase.df$PHI_MolConn_ID)],
+         pb.host=phibase.df$Host.species[match(pb.id, phibase.df$PHI_MolConn_ID)]) %>%
   arrange(orthogroup)
 
 #Find orthogroups with at least 50% of genes with a phi-base hit
@@ -1059,12 +1060,22 @@ orthogroups.pb <- genes.cargo.pb.df %>%
 orthogroups.pb.df <- genes.cargo.pb.df %>%
   filter(orthogroup %in% orthogroups.pb,
          !is.na(pb.gene),
-         !pb.gene %in% c("FvCpsA")) %>%
-  mutate(pb.gene=sub(" \\(.*", "", pb.gene),
-         pb.label=paste0(pb.gene, "-like")) %>%
+         !pb.gene %in% c("FvCpsA (FVEG_00488)")) %>%
+  mutate(pb.gene2=sub(" \\(.*", "", pb.gene),
+         pb.label=paste0(pb.gene2, "-like")) %>%
   dplyr::select(orthogroup, pb.gene, pb.label) %>%
   unique() %>%
   print(n=30)
+
+#Summarise PHI-base gene metadata
+pb.results <- genes.cargo.pb.df %>%
+  filter(pb.gene %in% orthogroups.pb.df$pb.gene) %>%
+  dplyr::select(starts_with("pb")) %>%
+  unique() %>%
+  arrange(match(pb.phen,
+                c("loss of pathogenicity", "reduced virulence",
+                  "unaffected pathogenicity", "increased virulence (hypervirulence)")),
+          pb.species)
 
 #Which CSEPs in elements
 orthogroups.stats %>%
@@ -1076,7 +1087,7 @@ orthogroups.stats %>%
          !is.na(CAZyme))
 
 #Make dataframe of presence of features previously identified in element cargos/of interest
-func.sum.df <- data.frame(gene=c("DUF3723", "FRE", "PLP", "Spok (1-4)", "ToxA", "BGC", "NACHT domain-containing"),
+func.sum.df <- data.frame(gene=c("DUF3723", "FRE", "PLP", "Spok (1-4)", "ToxA", "BGC", "NLR"),
                           presence=c(0, 0, 0, 0, 0, 0, 1))
 
 #Plot table
@@ -1099,7 +1110,7 @@ element.genes.func <- element.genes.func %>%
          category=ifelse(orthogroup %in% c("N0.HOG0000176", "N0.HOG0000260", "N0.HOG0010081"),
                          "FUG1", category),
          func=ifelse(grepl("NACHT", domain) & category == "gene",
-                     "NACHT domain-containing",
+                     "NLR",
                      NA),
          func=ifelse(is.na(orthogroups.stats$CSEP[match(orthogroup, orthogroups.stats$orthogroup)]),
                      func, "CSEP"),
@@ -1268,3 +1279,4 @@ grep("spobra1_10718", sordario.elements$ID)
 genes.df %>% filter(orthogroup == "N0.HOG0000251")
 
 # write.csv(element.genes.func, "Papers/Gaeumannomyces_starships_paper/starfish_cargo.csv", row.names=FALSE)
+# write.csv(pb.results, paste0(dir.starship, "phi-base_table.csv"), row.names=FALSE)
