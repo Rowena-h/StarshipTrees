@@ -1,0 +1,68 @@
+tip,element,captain,species,strain,element.length
+Starship-1_Aalt,Aalt_Starship1,altaltZ7_Starship-1_Aalt-Captain,Alternaria alternata,Z7,87507
+Starship-1_Agai,Agai_Starship1,altgai1_Starship-1_Agai-Captain,Alternaria gaisen,FERA 650,55716
+Starship-1_Asol,Asol_Starship1,altsolNL03003_Starship-1_Asol-Captain,Alternaria solani,NL03003,96947
+Starship-2_Aten,Aten_Starship2,altten5_RYO12503.1_Starship-2_Aten-Captain,Alternaria tenuissima,FERA 743,84520
+Starship-1_Aten,Aten_Starship1,altten5_Starship-1_Aten-Captain,Alternaria tenuissima,FERA 743,83050
+Starship-1_Afel,Afel_HEPHAESTUS,Aspfel_Starship-1_Afel-Captain,Aspergillus felis,FM324,40445
+Galactica_Afla,Afla_Galactica,AflaAF13_QMW37022.1_Starship-1_Afla-Captain,Aspergillus flavus,AF13,309598
+Starship-2_Afla,Afla_Starship2,AflaNRRL3357_XP_041149996.1_Starship-2_Afla-Captain,Aspergillus flavus,NRRL3357,66844
+Starship-1_Afum,Afum_Starship1,aspfum8_106865_Starship-1_Afum-Captain,Aspergillus fumigatus,A1163,53113
+Starship-1_Anig,Anig_Starship1,aspnig8_283767_Starship-1_Anig-Captain,Aspergillus niger,ATCC 13157,75031
+Starship-1_Aory,Aory_Starship1,AoryRIB40_BAE66188.1_Starship-1_Aory-Captain,Aspergillus oryzae,RIB40,253754
+Starship-1_Asoj,Asoj_Starship1,AsojSMF134_Starship-1_Asoj-Captain,Aspergillus sojae,SMF134,393007
+Voyager_Bdot,Bdot_Voyager,,Botryosphaeria dothidea,LW-Hubei,68837
+Starship-1_Cpsa,Cpsa_Starship1,clapsa3_10577_Starship-1_Cpsa-Captain,Cladophialophora psammophila,CBS 110553,69866
+Starship-2_Cpsa,Cpsa_Starship2,clapsa3_8877_Starship-2_Cpsa-Captain,Cladophialophora psammophila,CBS 110553,91057
+Starship-1_Fnub,Fnub_Starship1,fonnub2_8242_Starship-1_Fnub-Captain,Fonsecaea nubica,CBS 269.64,86182
+Starship-1_Fped,Fped_Starship1,fonped2_6568_Starship-1_Fped-Captain,Fonsecaea pedrosoi,CBS 271.37,86057
+Starship-1_Fcul,Fcul_Starship1,Fuscul_Starship-1_Fcul-Captain,Fusarium culmorum,Class2-1B,156000
+Starship-1_Ffuj,Ffuj_Starship1,Fusfuj_Starship-1_Ffuj-Captain,Fusarium fujikuroi strain,E282,93762
+Starship-1_Foxy_Fo47,FoxyFo47_Starship1,FusoxyF047_Starship-1_Foxy_Fo47-Captain,Fusarium oxysporum,Fo47,119415
+Starship-1_Foxy_Fo5176,Foxy5176_Starship1,FusoxyFo5176_KAF6519529.1_Starship-1_Foxy_Fo5176-Captain,Fusarium oxysporum f. sp. conglutinans strain,Fo5176,117827
+Starship-1_Foxy_Fol4287,FoxyFol4287_Starship1,FusoxyFO4287_XP_018254392.1_Starship-1_Foxy_Fol4287-Captain,Fusarium oxysporum f. sp. lycopersici,4287,92531
+Gt-CB1_s00024,Ga-CB1_s00024,Gt-CB1_EIv1_0042340,Gaeumannomyces avenae,Ga-CB1,376177
+Gt-CB1_s00036,Ga-CB1_s00036,Gt-CB1_EIv1_0101070,Gaeumannomyces avenae,Ga-CB1,491826
+Gt-3aA1_s00044,Ga-3aA1_s00044,Gt-3aA1_0069880,Gaeumannomyces avenae,Ga-3aA1,297233
+Gt-3aA1_s00045,Ga-3aA1_s00045,Gt-3aA1_0102790,Gaeumannomyces avenae,Ga-3aA1,89632
+Gt-3aA1_s00046,Ga-3aA1_s00046,Gt-3aA1_0106450,Gaeumannomyces avenae,Ga-3aA1,471544
+Gt-3aA1_s00047,Ga-3aA1_s00047,Gt-3aA1_0106960,Gaeumannomyces avenae,Ga-3aA1,156142
+Gt-4e_s00054,Gt-4e_s00054,Gt-4e_0041710,Gaeumannomyces tritici,Gt-4e,33562
+Gt-4e_s00056,Gt-4e_s00056,Gt-4e_0071570,Gaeumannomyces tritici,Gt-4e,213706
+Gt-4e_s00058,Gt-4e_s00058,Gt-4e_EIv1_0092260,Gaeumannomyces tritici,Gt-4e,412710
+Gt-8d_s00067,Gt-8d_s00067,Gt-8d_tyr90,Gaeumannomyces tritici,Gt-8d,60630
+Gt14LH10_s00074,Gt-LH10_s00074,Gt14LH10_0018940,Gaeumannomyces tritici,Gt-LH10,221098
+Gt14LH10_s00085,Gt-LH10_s00085,Gt14LH10_EIv1_0089090,Gaeumannomyces tritici,Gt-LH10,348505
+Gt14LH10_s00088,Gt-LH10_s00088,Gt14LH10_0114820,Gaeumannomyces tritici,Gt-LH10,336199
+Gt14LH10_s00089,Gt-LH10_s00089,Gt14LH10_0122400,Gaeumannomyces tritici,Gt-LH10,32610
+Gt-19d1_s00091,Gt-19d1_s00091,Gt-19d1_tyr43,Gaeumannomyces tritici,Gt-19d1,73228
+Gt-23d_s00099,Gt-23d_s00099,Gt-23d_0058370,Gaeumannomyces tritici,Gt-23d,272854
+Gt-23d_s00103,Gt-23d_s00103,Gt-23d_EIv1_0073080,Gaeumannomyces tritici,Gt-23d,324041
+Gt-23d_s00104,Gt-23d_s00104,Gt-23d_0104740,Gaeumannomyces tritici,Gt-23d,339654
+Gt-23d_s00105,Gt-23d_s00105,Gt-23d_0110920,Gaeumannomyces tritici,Gt-23d,259869
+Gt-23d_s00107,Gt-23d_s00107,Gt-23d_EIv1_0128360,Gaeumannomyces tritici,Gt-23d,688307
+Starship-1_Llup,Llup_Starship1,Letlup_KAF6222261.1_Starship-1_Llup-Captain,Letharia lupina,WasteWater1,88059
+Voyager_Mpha,Mpha_Voyager,mp102_11332,Macrophomina phaseolina,mp102,91145
+Argo_Mpha,Mpha_Argo,mp102_13053,Macrophomina phaseolina,mp102,76707
+Phoenix_Mpha,Mpha_Phoenix,mp053_13158,Macrophomina phaseolina,mp053,195341
+Defiant_Mpha,Mpha_Defiant,mp040_defiantCapDUF3435,Macrophomina phaseolina,mp040,192877
+Derelict_Mpha,Mpha_Derelict,,Macrophomina phaseolina,,228769
+Enterprise_Msp,Msp_Enterprise,melsp.1_278976_Enterprise-Captain,Melanconium sp.,,71950
+Starship-1_Mimp,Mimp_Starship1,morimp1_280873_Starship-1_Mimp-Captain,Morchella importuna,CCBAS932,26941
+Starship-1_Ooli,Ooli_Starship1,Orboli_KAF3210426.1_Starship-1_Ooli-Captain,Orbilia oligospora,TWF106,112267
+Starship-2_Pvar,Pvar_Starship2,paevar1_465981_Starship-2-Captain,Paecilomyces variotii,CBS 101075,134280
+HEPHAESTUS,Pvar_HEPHAESTUS,paevar2_195182_HEPHAESTUS-Captain,Paecilomyces variotii,CBS 144490,76082
+Starship-2_Pans,Pans_Starship2,podans_XP_001910253.1_Starship-2_Pans-Captain,Podospora anserina,S,60406
+Enterprise_Pans,Pans_Enterprise,podans_QSD99509.1_Enterprise_Pans-Captain,Podospora anserina ,Wa28,161296
+ToxA_Ptri,Ptri_ToxA,Pyrtr09_PWO19029.1_Starship-1_Ptri-Captain,Pyrenophora tritici-repentis,M4,135491
+Starship-1_Tmar,Tmar_Starship1,Talmar_QGA17639.1_Starship-1_Tmar-Captain,Talaromyces marneffei,11CN-20-091,59925
+Starship-1_Tasp,Tasp_Starship1,Triasp_XP_024763524.1_Starship-1_Tasp-Captain,Trichoderma asperellum,CBS 433.97,73474
+Starship-2_Tasp,Tasp_Starship2,Triasp_Starship-2_Tasp-Captain,Trichoderma asperellum,DQ-1,293822
+Gh-1B17_s00001,Gh-1B17_s00001,Gh-1B17_EIv1_0023060,Gaeumannomyces hyphopodioides,Gh-1B17,57443
+Gh-2C17_s00015,Gh-2C17_s00015,Gh-2C17_0000920,Gaeumannomyces hyphopodioides,Gh-2C17,57443
+Gt-4e_s00053,Gt-4e_s00053,Gt-4e_EIv1_0021450,Gaeumannomyces tritici,Gt-4e,183124
+Gt-23d_s00109,Gt-23d_s00109,Gt-23d_0130680,Gaeumannomyces tritici,Gt-23d,128778
+Gt-23d_s00102,Gt-23d_s00102,Gt-23d_tyr54,Gaeumannomyces tritici,Gt-23d,58538
+Gt14LH10_s00079,Gt-LH10_s00079,Gt14LH10_EIv1_0024240,Gaeumannomyces tritici,Gt-LH10,317385
+Gt-4e_s00062,Gt-4e_s00062,Gt-4e_EIv1_0127790,Gaeumannomyces tritici,Gt-4e,246714
+Gt-4e_s00064,Gt-4e_s00064,Gt-4e_0127930,Gaeumannomyces tritici,Gt-4e,68481
