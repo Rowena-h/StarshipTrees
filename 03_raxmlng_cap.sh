@@ -25,7 +25,7 @@ singularity exec ~/programmes/raxml-ng/raxml-ng-1.1.0.img raxml-ng \
 	--model ${model} \
 	--prefix ${dir}/captains \
 	--seed 2 \
-	--threads auto{${SLURM_CPUS_PER_TASK}} \
+	--threads ${SLURM_CPUS_PER_TASK} \
 	--bs-trees autoMRE{1000}
 
 #Check convergence
