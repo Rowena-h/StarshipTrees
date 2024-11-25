@@ -16,6 +16,7 @@ library(phytools)     #2.1-1
 library(scales)       #1.3.0
 library(tgutil)       #0.1.15
 library(topGO)        #2.52.0
+library(tidyverse)    #2.0.0
 
 
 #Directory paths
@@ -30,6 +31,8 @@ dir.starship <- "R:/GaeumannomycesStarships/"
 attach(paste0(dir.comp, "plot_ideograms_2023-12-19.RData"))
 all.genes.df <- all.genes
 all.tes.df <- all.genes.tes
+chromosomes.df <- all.fragments
+element.pos.df <- all.starships
 detach()
 
 #Load orthogroup data
@@ -666,7 +669,7 @@ for (status in c("tree.backbone", "tree.clust")) {
   other.untangled <- get(paste0(c("tree.backbone", "tree.clust")[which(!c("tree.backbone", "tree.clust") %in% status)], ".untangled"))
   
   #Plot base tree
-  tree.tmp <- ggtree(tree.untangled, branch.length="none", lwd=0.2, ladderize=FALSE) +
+  tree.tmp <- ggtree(tree.untangled, linetype=NA, branch.length="none", ladderize=FALSE) +
     scale_y_continuous(expand=c(0, 0.5)) +
     theme(plot.title=element_text(hjust=0.5, size=7, face="bold"),
           plot.margin=margin(5.5, 0, 0, 0))
@@ -675,6 +678,7 @@ for (status in c("tree.backbone", "tree.clust")) {
   if (status == "tree.clust") {
     
     tree.tmp2 <- tree.tmp +
+      geom_tree(lwd=0.2) +
       scale_x_reverse() +
       xlim(30, 0) +
       new_scale_colour() +
@@ -690,6 +694,10 @@ for (status in c("tree.backbone", "tree.clust")) {
   } else {
     
     tree.tmp2 <- tree.tmp +
+      geom_tree(lwd=0.2) +
+      geom_text2(aes(x=branch, subset=!isTip, label=label),
+                 vjust=1.5,
+                 size=1.5) +
       xlim(0, 23) +
       new_scale_colour() +
       geom_tiplab(geom="label",
@@ -1242,17 +1250,124 @@ gg.element.schematic.repeats <- gg.element.schematic +
         strip.text.y=element_text(size=8, face="bold", margin=margin(-5, 22, -5, 0)),
         plot.margin=margin(5.5, 5.5, 5.5, 5.5),
         panel.spacing=unit(0, "lines")) +
-  # annotation_custom(ggplotGrob(gg.tab),
-  #                   xmin=600000, xmax=700000,
-  #                   ymin=0, ymax=6) +
   ggpreview(width=7, height=5)
 
+
+## ELEMENT POSITIONS ##
+
+#Get coordinates for pseudochromosomes
+chromosomes.df2 <- chromosomes.df %>%
+  filter(new.strain %in% c("Gt-LH10", "Gt-4e", "Gt-23d", "Ga-3aA1", "Ga-CB1", "Gt-19d1", "Gt-8d")) %>%
+  mutate(new.strain=fct_drop(new.strain))
+
+#Get coordinates for elements
+element.pos.df2 <- element.pos.df %>%
+  filter(new.strain %in% c("Gt-LH10", "Gt-4e", "Gt-23d", "Ga-3aA1", "Ga-CB1", "Gt-19d1", "Gt-8d"),
+         !elementID %in% c("Gh-1B17_s00001", "Gh-2C17_s00015" , "Gt-4e_s00053",
+                          "Gt-4e_s00062", "Gt-4e_s00063", "Gt-4e_s00064",
+                          "Gt14LH10_s00079", "Gt-23d_s00102", "Gt-23d_s00109")) %>%
+  mutate(new.strain=fct_drop(new.strain))
+
+#Get vector of elements with flanking direct repeats
+flanked.elements <- element.pos.df2 %>%
+  filter(category == "flank") %>%
+  pull(elementID) %>%
+  unique()
+
+#Filter for captain coordinates
+captain.pos.df <- element.pos.df2 %>% 
+  filter(category == "cap") %>%
+  mutate(elementID=ifelse(elementID %in% flanked.elements,
+                          paste0("*", as.numeric(sub(".*_s", "", elementID)), "*"),
+                          as.numeric(sub(".*_s", "", elementID))))
+
+species.tree <- read.tree(text="((((LH10,4e),23d),(Gt-8d,Gt-19d1)),(3aA1,CB1));")
+
+gg.species.tree <- ggtree(species.tree, lwd=0.2)
+
+#Plot ideograms with element locations
+gg.element.ideogram <- ggplot(chromosomes.df2, aes(x=end2)) +
+  geom_rect(aes(xmin=start2-150000, xmax=end2+150000,
+                ymin=as.numeric(new.strain)-0.2,
+                ymax=as.numeric(new.strain)+0.2,
+                fill=as.factor(colour)),
+            alpha=0.5,
+            colour=NA) +
+  geom_rect(aes(xmin=start2, xmax=end2,
+                ymin=as.numeric(new.strain)-0.14,
+                ymax=as.numeric(new.strain)+0.14),
+            fill="white",
+            colour=NA,
+            linewidth=0.1) +
+  geom_rect(data=element.pos.df2,
+            aes(xmin=plot.xmin, xmax=plot.xmax,
+                ymin=as.numeric(new.strain)-0.14,
+                ymax=as.numeric(new.strain)+0.14),
+            linewidth=0.05,
+            fill="grey",
+            colour="grey") +
+  geom_rect(data=captain.pos.df,
+            aes(xmin=plot.xmin, xmax=plot.xmax,
+                ymin=as.numeric(new.strain)-0.14,
+                ymax=as.numeric(new.strain)+0.14),
+            linewidth=0.3,
+            fill="red",
+            colour="red") +
+geom_label_repel(data=captain.pos.df,
+                 aes(x=(plot.xmin+plot.xmax)/2,
+                     y=as.numeric(new.strain)+0.15,
+                     label=elementID),
+                 fill="black",
+                 label.size=NA,
+                 segment.colour="black",
+                 size=2,
+                 colour="white",
+                 fontface="bold",
+                 nudge_y=0.36,
+                 direction="x",
+                 label.padding=unit(2, "pt"),
+                 point.padding=NA,
+                 box.padding=0,
+                 segment.size=0.3,
+                 min.segment.length=0) +
+  coord_cartesian(clip="off") +
+  scale_x_continuous(labels=label_number(accuracy=1,
+                                         scale=1e-6,
+                                         suffix="Mbp"),
+                     expand=c(0, 100)) +
+  scale_y_discrete(limits=seq(1, 7.5),
+                   breaks=c(1:7),
+                   labels=levels(chromosomes.df2$new.strain)) +
+  scale_fill_manual(name="Syntenic block",
+                    values=c("#FFAABB", "#EE8866", "#EEDD88", "#BBCC33",
+                             "#44BB99", "#77AADD", "dimgrey")) +
+  guides(fill=guide_legend(title.position="top",
+                           title.theme=element_text(face="bold", size=6))) +
+  theme_minimal() +
+  theme(legend.position=c(1.08, 0.5),
+        legend.direction="vertical",
+        legend.text=element_text(size=5),
+        legend.key.size=unit(0.2, "cm"),
+        legend.margin=margin(0, 0, 0, 0, unit="pt"),
+        axis.text.y=element_text(size=8),
+        axis.text.x=element_blank(),
+        axis.ticks=element_blank(),
+        axis.title=element_blank(),
+        strip.background=element_blank(),
+        strip.text.y.left=element_text(size=6, face="bold", angle=0, vjust=-0.1),
+        strip.clip="off",
+        panel.spacing=unit(0.5, "lines"),
+        plot.margin=margin(0, 60, 0, 5.5),
+        panel.grid.major=element_blank(), 
+        panel.grid.minor=element_blank(), 
+        panel.background=element_blank()) +
+  ggpreview(width=7, height=2)
+
 #Write to file
-pdf(paste0("R:/GaeumannomycesStarships/schematic-",
-           Sys.Date(), ".pdf"),
-    width=7, height=5)
-(gg.tree | gg.element.schematic.repeats) + 
-  plot_layout(widths=c(1, 12))
+pdf(paste0(dir.starship, "schematic-", Sys.Date(), ".pdf"), width=7, height=7)
+plot_grid(plot_grid(gg.tree, gg.element.schematic.repeats, rel_widths=c(1, 12), align="h", axis="tb"),
+          plot_grid(gg.species.tree, gg.element.ideogram, rel_widths=c(1, 12), align="h", axis="tb"),
+          ncol=1, rel_heights=c(5, 2), labels="auto")
 dev.off()
 
 
