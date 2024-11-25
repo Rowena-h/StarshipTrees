@@ -27,3 +27,24 @@ singularity exec ~/programmes/mashtree/mashtree.img mashtree_bootstrap.pl \
 	--numcpus ${SLURM_CPUS_PER_TASK} \
 	 mashtree/starship_elements_big_split/* \
 	-- > mashtree/starship_tree_big.bootstrap.tre
+
+#Repeat only with elements with flanking direct repeats
+cp -r mashtree/starship_elements_big_split mashtree/starship_elements_big_conservative_split
+
+cd mashtree/starship_elements_big_conservative_split
+
+for file in $(ls)
+do
+	new=$(echo $file | sed 's/__.*/\.fasta/')
+	mv $file $new
+done
+
+comm -2 -3 <(ls) <(sort ../../flanked) | xargs rm
+
+cp mashtree/starship_elements_conservative_split/gaeumannomyces.elements* mashtree/starship_elements_big_conservative_split
+
+singularity exec ~/programmes/mashtree/mashtree.img mashtree_bootstrap.pl \
+        --reps 100 \
+        --numcpus ${SLURM_CPUS_PER_TASK} \
+         mashtree/starship_elements_big_conservative_split/* \
+        -- > mashtree/starship_tree_big_conservative.bootstrap.tre
