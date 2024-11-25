@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -p ei-long                              # queue
+#SBATCH -p ei-medium                            # queue
 #SBATCH -N 1                                    # number of nodes
 #SBATCH -c 2                                    # number of cores
 #SBATCH --mem 1GB                               # memory pool for all cores
