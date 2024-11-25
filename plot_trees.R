@@ -19,21 +19,45 @@ dir.starship <- "R:/GaeumannomycesStarships/"
 ## CURATED ELEMENT KMER TREE ##
 ###############################
 
+#Read in metadata
+metadata <- read.csv(paste0(dir.starship, "/metadata.csv")) %>%
+  mutate(genus=word(species, 1))
+
 #Read in tree
 kmer.element.tree <- 
-  read.tree(paste0(dir.starship, "mashtree/starship_tree.bootstrap.tre"))
+  read.tree(paste0(dir.starship, "mashtree/starship_tree_conservative.bootstrap.tre"))
 kmer.element.tree$tip.label <- 
   sub("__.*", "",
       sub("gaeumannomyces.elements.id_", "",
           sub("Starships.id_", "", kmer.element.tree$tip.label)))
 
-#Read in metadata
-metadata <- read.csv(paste0(dir.starship, "/metadata.csv")) %>%
-  mutate(genus=word(species, 1))
-
 #Plot tree
 gg.kmer.element.tree <- ggtree(kmer.element.tree, linewidth=NA, layout="fan") %<+% metadata +
-  xlim(-0.1, 2.2) +
+  xlim(-0.3, 2)
+
+# #Select nodes for clades
+# gg.kmer.element.tree + 
+#   geom_tree() +
+#   geom_tiplab(aes(label=element),
+#               size=2,
+#               align=TRUE) +
+#   geom_text(aes(label=node), size=3)
+
+#Make dataframe of clade nodes
+clades.df <- data.frame(
+  clade=c("Gaeumannomyces", "Fusarium", "Fonsecaea", "Trichoderma",
+          "Podospora", "Alternaria", "Aspergillus", "Macrophomina"),
+  node=c(68, 60, 57, 65,
+         87, 90, 95, 100)
+)
+
+#Add features
+gg.kmer.element.tree2 <- gg.kmer.element.tree +
+  geom_highlight(data=clades.df,
+                 aes(node=node),
+                 extend=1.3,
+                 fill="#F2F2F2",
+                 alpha=1) +
   geom_tree(linewidth=0.2,
             aes(colour=ifelse(as.numeric(label) < 70, "insig", NA)),
             show.legend=FALSE) +
@@ -71,46 +95,37 @@ gg.kmer.element.tree <- ggtree(kmer.element.tree, linewidth=NA, layout="fan") %<
              '#E8601C', '#4EB265', '#5289C7', '#F1932D', '#F6C141', '#F7F056',
              '#994F88', '#EE8026', '#7BAFDE', '#AA6F9E', '#DC050C')
   ) +
-  geom_strip("Gt-23d_s00099", "Gt-CB1_s00024",
+  geom_strip("Gt-CB1_s00036", "Gt-23d_s00099",
              barsize=0.3,
-             offset=1.2) +
+             offset=1.3) +
   geom_strip("Starship-1_Ffuj", "Starship-1_Foxy_Fo47",
              barsize=0.3,
-             offset=1.2) +
+             offset=1.3) +
   geom_strip("Starship-1_Fped", "Starship-1_Fnub",
              barsize=0.3,
-             offset=1.2) +
+             offset=1.3) +
   geom_strip("Starship-1_Tasp", "Starship-2_Tasp",
              barsize=0.3,
-             offset=1.2) +
+             offset=1.3) +
   geom_strip("Starship-2_Pans", "Enterprise_Pans",
              barsize=0.3,
-             offset=1.2) +
+             offset=1.3) +
   geom_strip("Argo_Mpha", "Phoenix_Mpha",
              barsize=0.3,
-             offset=1.2) +
+             offset=1.3) +
   geom_strip("Starship-1_Agai", "Starship-2_Aten",
              barsize=0.3,
-             offset=1.2) +
+             offset=1.3) +
   geom_strip("Starship-1_Anig", "Starship-1_Aory",
              barsize=0.3,
-             offset=1.2) +
-  geom_strip("Starship-1_Afum", "Starship-1_Llup",
-             barsize=0.3,
-             offset=1.2) +
+             offset=1.3) +
   geom_fruit(geom=geom_bar,
              aes(y=tip,
                  x=element.length),
              stat="identity",
-             offset=1.1, 
-             pwidth=0.2) +
+             offset=1.8, 
+             pwidth=0.5) +
   ggpreview(width=4, height=4)
-
-#Write to file
-pdf(file=paste0(dir.starship, "starship_kmer_tree-", Sys.Date(), ".pdf"),
-    height=4, width=4)
-gg.kmer.element.tree
-dev.off()
 
 
 ##################################
@@ -127,7 +142,7 @@ ml.cap.tree$tip.label <-
 #Plot tree
 gg.ml.cap.tree <- ggtree(ml.cap.tree, linewidth=NA, layout="fan") %<+%
   (metadata %>% select(tip=captain, element, genus)) +
-  xlim(-0.1, 8) +
+  xlim(-0.1, 5) +
   geom_tree(linewidth=0.2,
             aes(colour=ifelse(as.numeric(label) < 70, "insig", NA)),
             show.legend=FALSE) +
@@ -225,14 +240,14 @@ for (status in c("kmer.element", "ml.cap")) {
     
     gg.tree2 <- gg.tree +
       scale_x_reverse() +
-      xlim(43, 0) +
+      xlim(33, 0) +
       new_scale_colour() +
       geom_tiplab(geom="label",
                   aes(fill=genus, colour=genus),
                   label.padding=unit(0, "pt"),
                   label.size=0.5,
                   size=1.2,
-                  offset=-21.5,
+                  offset=-13.9,
                   align=TRUE,
                   linesize=0.3) +
       geom_tiplab(geom="label",
@@ -242,7 +257,7 @@ for (status in c("kmer.element", "ml.cap")) {
                   label.padding=unit(0, "pt"),
                   label.size=NA,
                   size=1.2,
-                  offset=-21.5,
+                  offset=-13.9,
                   align=TRUE,
                   linetype=NULL) +
       ggtitle("Captain gene tree (ML)")
@@ -250,14 +265,14 @@ for (status in c("kmer.element", "ml.cap")) {
   } else {
     
     gg.tree2 <- gg.tree +
-      xlim(0, 40) +
+      xlim(0, 23) +
       new_scale_colour() +
       geom_tiplab(geom="label",
                   aes(fill=genus, colour=genus),
                   label.padding=unit(0, "pt"),
                   label.size=0.5,
                   size=1.2,
-                  offset=21.5,
+                  offset=9.9,
                   hjust=1,
                   align=TRUE,
                   linesize=0.3) +
@@ -268,7 +283,7 @@ for (status in c("kmer.element", "ml.cap")) {
                   label.padding=unit(0, "pt"),
                   label.size=NA,
                   size=1.2,
-                  offset=21.5,
+                  offset=9.9,
                   hjust=1,
                   align=TRUE,
                   linetype=NULL) +
@@ -343,7 +358,7 @@ ggpreview(gg.tanglegram, width=3, height=4)
 #Write to file
 pdf(file=paste0(dir.starship, "starship_fig1-", Sys.Date(), ".pdf"),
     height=4, width=7)
-plot_grid(gg.kmer.element.tree, gg.tanglegram,
+plot_grid(gg.kmer.element.tree2, gg.tanglegram,
           rel_widths=c(4, 3), labels="auto")
 dev.off()
 
@@ -354,6 +369,24 @@ RF.dist(kmer.element.tree.drop.rooted, ml.cap.tree.rooted, normalize=TRUE)
 print(paste0(RF.dist(unroot(ml.cap.tree.rooted), unroot(kmer.element.tree.drop.rooted), normalize=TRUE) *
                length(bitsplits(unroot(kmer.element.tree.drop.rooted))[3]$freq), "/",
              length(bitsplits(unroot(kmer.element.tree.drop.rooted))[3]$freq)))
+
+#Calculate percentage of genera that are monophyletic in captain and element trees
+monophyly.df <- data.frame(genus=metadata %>% group_by(genus) %>% summarise(num=n()) %>% filter(num > 1) %>% pull(genus),
+                           kmer.element=NA,
+                           ml.cap=NA)
+
+for (genus in unique(metadata$genus)) {
+  
+  monophyly.df$kmer.element[monophyly.df$genus == genus] <- 
+    is.monophyletic(kmer.element.tree.rooted, metadata$element[metadata$genus == genus])
+  monophyly.df$ml.cap[monophyly.df$genus == genus] <- 
+    is.monophyletic(ml.cap.tree.rooted, metadata$element[metadata$genus == genus])
+  
+}
+
+monophyly.df %>%
+  summarise(kmer.element=sum(kmer.element, na.rm=TRUE)/n()*100,
+            ml.cap=sum(ml.cap, na.rm=TRUE)/n()*100)
 
 
 #######################################################
@@ -591,7 +624,10 @@ descendants.list <- list()
 
 for (i in 1:length(big.tree.labels.data$genus.node)) {
   
-  descendants.list[[big.tree.labels.data$genus.label[i]]] <- na.omit(kmer.element.big.tree$tip.label[getDescendants(kmer.element.big.tree, big.tree.labels.data$genus.node[i])])
+  descendants.list[[big.tree.labels.data$genus.label[i]]] <- 
+    na.omit(kmer.element.big.tree$tip.label[
+      getDescendants(kmer.element.big.tree, big.tree.labels.data$genus.node[i])
+    ])
   
 }
 
@@ -617,8 +653,54 @@ kmer.element.clades.tree.data <- big.tree.labels.data %>%
            substr(genus.label, 1, 3))) %>%
   select(tip.label, everything())
 
+#Plot base tree
+gg.kmer.element.big.family.tree <- 
+  ggtree(kmer.element.clades.tree, linewidth=NA, branch.length="none",
+         layout="fan") %<+% kmer.element.clades.tree.data
+
+#Check nodes for flipping to match order of other figure
+# gg.kmer.element.big.family.tree + 
+#   geom_tree(linewidth=0.2) +
+#   geom_tiplab(aes(label=genus.label2), size=3, offset=2) +
+#   geom_text(aes(label=node), size=3)
+
+gg.kmer.element.big.family.tree2 <- flip(gg.kmer.element.big.family.tree, 83, 108)
+
+for (node in c(91, 92, 85, 86, 88, 129, 130, 133, 114, 71, 74, 66)) {
+  
+  gg.kmer.element.big.family.tree2 <- rotate(gg.kmer.element.big.family.tree2, node)
+  
+}
+
+#Reorder tree
+kmer.element.clades.ordered.tree <- rotateConstr(kmer.element.clades.tree,
+                     (gg.kmer.element.big.family.tree2$data %>%
+                        arrange(y) %>%
+                        pull(label)))
+
+#Extract nodes corresponding to tips for labelling
+tip.nodes <- gg.kmer.element.big.family.tree2$data %>%
+  filter(isTip) %>%
+  pull(node)
+
+gg.kmer.element.big.family.tree3 <-  
+  ggtree(kmer.element.clades.ordered.tree, linewidth=NA, branch.length="none",
+         layout="fan", open.angle=25, ladderize=FALSE) %<+% kmer.element.clades.tree.data +
+  xlim(-10, 65) +
+  geom_hilight(mapping=aes(subset=node %in% tip.nodes, fill=class),
+               extend=17,
+               alpha=0.2,
+               show.legend=FALSE) +
+  geom_tree(linewidth=0.2) +
+  geom_tiplab(aes(label=genus.label2), size=2, offset=2) +
+  geom_tippoint(aes(colour=class),
+                size=0.5,
+                show.legend=FALSE) +
+  scale_fill_manual(values=c('#7BAFDE','#D1BBD7', '#F7F056', '#F4A736', '#DC050C')) +
+  scale_colour_manual(values=c('#7BAFDE','#D1BBD7', '#F7F056', '#F4A736', '#DC050C'))
+
 #Make dataframe of captain families per clade
-grid.shapes <- big.tree.data %>%
+grid.colour <- big.tree.data %>%
   filter(!is.na(genus.node)) %>%
   arrange(y) %>%
   mutate(genus.id=consecutive_id(genus.node),
@@ -630,66 +712,45 @@ grid.shapes <- big.tree.data %>%
   summarise(count=n()) %>%
   mutate(prop=count/num.elements) %>%
   ungroup() %>%
-  complete(tip.label, captain.family, fill=list(prop=0)) %>%
   filter(!is.na(captain.family)) %>%
+  complete(tip.label, captain.family, fill=list(prop=0)) %>%
   select(tip.label, captain.family, prop)
 
-#Plot base tree
-gg.kmer.element.big.family.tree <- 
-  ggtree(kmer.element.clades.tree, linewidth=NA, branch.length="none",
-         layout="fan", open.angle=25) %<+% kmer.element.clades.tree.data
+#Get angles for text
+grid.text <- grid.colour %>%
+  arrange(match(tip.label, (gg.kmer.element.big.family.tree3$data %>% arrange(y) %>% pull(label)))) %>%
+  filter(prop > 0) %>%
+  mutate(new.angle=gg.kmer.element.big.family.tree3$data$angle[match(tip.label, gg.kmer.element.big.family.tree3$data$label)]-90) %>%
+  pull(new.angle)
 
-#Check nodes for flipping to match order of other figure
-gg.kmer.element.big.family.tree + 
-  geom_tree(linewidth=0.2) +
-  geom_tiplab(aes(label=genus.label2), size=3, offset=2) +
-  geom_text(aes(label=node), size=3)
-
-gg.kmer.element.big.family.tree2 <- flip(gg.kmer.element.big.family.tree, 83, 108)
-
-for (node in c(91, 92, 85, 86, 88, 129, 130, 133, 114, 71, 74, 66)) {
-  
-  gg.kmer.element.big.family.tree2 <- rotate(gg.kmer.element.big.family.tree2, node)
-  
-}
-
-#Extract nodes corresponding to tips for labelling
-tip.nodes <- gg.kmer.element.big.family.tree2$data %>%
-  filter(isTip) %>%
-  pull(node)
-
-gg.kmer.element.big.family.tree3 <- 
-  gg.kmer.element.big.family.tree2 +
-  xlim(-10, 65) +
-  geom_hilight(mapping=aes(subset=node %in% tip.nodes, fill=class),
-               extend=15,
-               alpha=0.2,
-               show.legend=FALSE) +
-  geom_tree(linewidth=0.2) +
-  geom_tiplab(aes(label=genus.label2), size=2, offset=2) +
-  geom_tippoint(aes(colour=class),
-                size=0.5,
-                show.legend=FALSE) +
-  scale_fill_manual(values=c('#7BAFDE','#D1BBD7', '#F7F056', '#F4A736', '#DC050C')) +
-  scale_colour_manual(values=c('#7BAFDE','#D1BBD7', '#F7F056', '#F4A736', '#DC050C')) +
+gg.kmer.element.big.family.tree4 <- gg.kmer.element.big.family.tree3 +
   new_scale_fill() +
-  geom_fruit(data=grid.shapes,
+  geom_fruit(data=grid.colour,
              geom=geom_tile,
              aes(y=tip.label,
                  x=captain.family,
                  fill=prop),
              colour="dimgrey",
-             offset=0.4, 
+             offset=0.45, 
              pwidth=0.6,
              axis.params=list(axis="x",
-                              title="Captain family", 
-                              line.size=0,
+                              title="Captain family",
                               text.angle=-90,
                               text.size=1.5,
+                              line.size=0,
                               hjust=0,
                               vjust=0.5)) +
-  scale_fill_gradient(high="black", low="white",
-                      breaks=c(0, 0.5, 1)) +
+  geom_fruit(data=grid.colour %>% filter(prop > 0),
+             geom=geom_text,
+             aes(y=tip.label,
+                 x=captain.family,
+                 label=round(prop, 2)),
+             size=0.8,
+             angle=rev(grid.text),
+             offset=-0.3,
+             pwidth=0.6) +
+  scale_fill_gradient(high="orange", low="white",
+                       breaks=c(0, 0.5, 1)) +
   labs(fill="Proportion of captain\nfamilies in clade") +
   theme(legend.position=c(0.75, 0.85),
         legend.direction="horizontal",
@@ -703,7 +764,7 @@ gg.kmer.element.big.family.tree3 <-
 #Write to file
 pdf(file=paste0(dir.starship, "starship_kmer_big_tree_family_summary-", Sys.Date(), ".pdf"),
     height=4, width=4)
-gg.kmer.element.big.family.tree3
+gg.kmer.element.big.family.tree4
 dev.off()
 
 
@@ -759,4 +820,95 @@ gg.class.total <- ggplot(class.elements.df, aes(x=total, y=fct_reorder(class, pr
 pdf(file=paste0(dir.starship, "gluckthaler2024_classes-", Sys.Date(), ".pdf"),
     height=2, width=5)
 plot_grid(gg.class.prop, gg.class.total, rel_widths=c(1,0.75))
+dev.off()
+
+
+###############################################################
+## CONSERVATIVE BIG ELEMENT KMER TREE (SUPPLEMENTARY FIGURE) ##
+###############################################################
+
+#Read in tree
+kmer.element.big.cons.tree <- 
+  read.tree(paste0(dir.starship, "mashtree/starship_tree_big_conservative.bootstrap.tre"))
+kmer.element.big.cons.tree$tip.label <- 
+  sub("__.*", "",
+      sub("gaeumannomyces.elements.id_", "",
+          sub("mycodb.final.starships.id_", "", kmer.element.big.cons.tree$tip.label)))
+kmer.element.big.cons.tree$tip.label <- 
+  gsub("Gt-3aA1", "Ga-3aA1",
+       gsub("Gt-CB1", "Ga-CB1",
+            gsub("Gt14LH10", "Gt-LH10", kmer.element.big.cons.tree$tip.label)))
+
+#Read in and format metadata
+metadata.big.cons <- read.csv(paste0(dir.starship, "metadata_Gluck-Thaler2024.tsv"), sep="\t")
+
+metadata.tmp <- bind_rows(
+  (metadata %>%
+     filter(genus == "Gaeumannomyces") %>%
+     mutate(genomeCode=sub("_.*", "", element),
+            species=word(species, 2),
+            lineage="{'clade': 'sordariomyceta',
+            'kingdom': 'Fungi',
+            'phylum': 'Ascomycota', 'subphylum': 'Pezizomycotina',
+            'class': 'Sordariomycetes',
+            'subclass': 'Sordariomycetidae',
+            'order': 'Magnaporthales',
+            'family': 'Magnaporthaceae',
+            'subfamily': ''}") %>%
+     select(genomeCode, genus, species, isolate="strain", lineage) %>%
+     distinct()),
+  metadata.big.cons
+) %>%
+  mutate(family=sub("}", "", word(sub(",.*", "", sub(".* family: ", "", gsub("[']", "", lineage))), 1)),
+         order=sub("}", "", word(sub(",.*", "", sub(".* order: ", "", gsub("[']", "", lineage))), 1)),
+         class=sub("}", "", word(sub(",.*", "", sub(".* class: ", "", gsub("[']", "", lineage))), 1)))
+
+#Add to classifications to metadata
+metadata.all.cons <- data.frame(tip=kmer.element.big.cons.tree$tip.label) %>%
+  mutate(genomeCode=sub("_.*", "", tip)) %>%
+  left_join(metadata.tmp, by="genomeCode") %>%
+  mutate(captain.family=tyr.class$family.name[match(tip, tyr.class$starshipID)])
+
+#Plot base tree
+gg.kmer.element.big.cons.tree <- 
+  ggtree(kmer.element.big.cons.tree,
+         aes(colour=ifelse(as.numeric(label) < 70, "insig", NA)),
+         linewidth=0.2, layout="fan") %<+% metadata.all.cons +
+  scale_colour_manual(values="grey",
+                      na.value="black",
+                      guide="none") +
+  xlim(-0.4, NA) +
+  new_scale_colour() +
+  geom_tiplab(geom="label",
+              aes(fill=class),
+              label.size=NA,
+              size=0.9,
+              align=TRUE,
+              linesize=0.2,
+              show.legend=FALSE) +
+  geom_tippoint(aes(colour=class, shape=captain.family),
+                stroke=0.3,
+                size=0.8) +
+  scale_shape_manual(breaks=c("Phoenix", "Hephaestus", "Tardis", "Serenity",
+                              "Prometheus", "Enterprise", "Galactica", "Moya",
+                              "Arwing", "Voyager", "Family 11"),
+                     values=c(15, 16, 17, 11, 7, 6, 14, 10, 3, 13, 8),
+                     na.translate=FALSE) +
+  scale_fill_manual(values=c('#7BAFDE','#D1BBD7', '#CAE0AB',
+                             '#F7F056', '#F4A736', '#DC050C')) +
+  scale_colour_manual(values=c('#7BAFDE','#D1BBD7', '#CAE0AB',
+                               '#F7F056', '#F4A736', '#DC050C')) +
+  guides(colour=guide_legend(override.aes=list(size=2), order=1),
+         shape=guide_legend(override.aes=list(size=2), order=2, ncol=2)) +
+  theme(legend.position=c(0.5, 0.5),
+        legend.background=element_blank(),
+        legend.key.size=unit(10,"pt"),
+        legend.title=element_blank(),
+        legend.text=element_text(face="italic", margin=margin(l=0.1, b=0.1, t=0.1))) +
+  ggpreview(width=8, height=8)
+
+#Write to file
+pdf(file=paste0(dir.starship, "starship_kmer_big_conservative_tree-", Sys.Date(), ".pdf"),
+    height=8, width=8)
+gg.kmer.element.big.cons.tree
 dev.off()
