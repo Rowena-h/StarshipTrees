@@ -18,13 +18,14 @@ Input data was sourced from [Hill et al. (2024)](https://www.biorxiv.org/content
 1. `sbatch 01_mashtree_curated.sh` builds a phylogenetic tree from a curated set of *Starship* elements using [mashtree](https://github.com/lskatz/mashtree), with 1,000 bootstrap replicates and `--mindepth 0` for greater accuracy.
 2. `sbatch 02_align_cap.sh` aligns element captain genes using MAFFT and trims alignments using [trimAl](https://github.com/inab/trimal), with parameters set to match [Gluck-Thaler et al. (2024)](https://doi.org/10.1093/nar/gkae327).
 3. `sbatch 03_raxmlng_cap.sh` builds an ML gene tree for captain genes using [RAxML-NG](https://github.com/amkozlov/raxml-ng) with bootstrapping until convergence or up to 1,000 replicates (whichever first).
-4. `sbatch 04_mashtree_big.sh` builds a phylogenetic tree from a wider set of *Starship* elements (predicted using [starfish](https://github.com/egluckthaler/starfish) by [Gluck-Thaler et al. (2024)](https://doi.org/10.1093/nar/gkae327)) using mashtree, with 100 bootstrap replicates.
+4. `sbatch 04_mashtree_big.sh` builds a phylogenetic tree from a wider set of *Starship* elements (predicted using [starfish](https://github.com/egluckthaler/starfish) by [Gluck-Thaler et al. (2024)](https://doi.org/10.1093/nar/gkae327)) using Mashtree, with 100 bootstrap replicates.
+5. `sbatch 05_sourmash.sh` generates average nucleotide identity (ANI) evolutionary distance matrices from kmer sketches of the curated and wider element datasets using [sourmash](https://github.com/sourmash-bio/sourmash). Neighbour-joining trees are subsequently inferred in the R script below using the [ape](https://rdrr.io/cran/ape/man/nj.html) package.
 
 Script to plot figures: `plot_trees.R`
 
 ## *Gaeumannomyces* element cargo exploration
 
-5. `sbatch 05_blast.sh` searches for previously reported genes and [PHI-base](http://www.phi-base.org/) genes in *Gaeumannomyces* element cargos using [BLAST](https://blast.ncbi.nlm.nih.gov/Blast.cgi).
+6. `sbatch 06_blast.sh` searches for previously reported genes and [PHI-base](http://www.phi-base.org/) genes in *Gaeumannomyces* element cargos using [BLAST](https://blast.ncbi.nlm.nih.gov/Blast.cgi).
 
 Script to plot figures: `plot_gaeumannomyces_cargo.R`
 
