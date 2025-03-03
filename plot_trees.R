@@ -912,3 +912,320 @@ pdf(file=paste0(dir.starship, "starship_kmer_big_conservative_tree-", Sys.Date()
     height=8, width=8)
 gg.kmer.element.big.cons.tree
 dev.off()
+
+
+###########################################################
+## SOURMASH BIG ELEMENT KMER TREE (SUPPLEMENTARY FIGURE) ##
+###########################################################
+
+#Read in sourmash distance matrix and generate neighbour-joining tree
+sourmash.big.dist <- as.dist(read.csv("R:/GaeumannomycesStarships/sourmash/big_dist.csv"))
+sourmash.big.tree <- nj(sourmash.big.dist)
+
+sourmash.big.tree$tip.label <- 
+  sub("__.*", "",
+      sub("gaeumannomyces.elements.id_", "",
+          sub("mycodb.final.starships.id_", "", sourmash.big.tree$tip.label)))
+sourmash.big.tree$tip.label <-
+  gsub("Gt.4e", "Gt-4e",
+       gsub("Gt.8d", "Gt-8d",
+            gsub("Gt.19d1", "Gt-19d1",
+                 gsub("Gt.23d", "Gt-23d",
+                      gsub("Gt.3aA1", "Ga-3aA1",
+                           gsub("Gt.CB1", "Ga-CB1",
+                                gsub("Gt14LH10", "Gt-LH10", sourmash.big.tree$tip.label)))))))
+
+options(ignore.negative.edge=TRUE)
+#Plot tree
+gg.sourmash.big.tree <- 
+  ggtree(sourmash.big.tree, linewidth=0.2, layout="fan") %<+% metadata.all +
+  xlim(-0.4, NA) +
+  geom_tiplab(geom="label",
+              aes(fill=class),
+              label.size=NA,
+              size=0.8,
+              align=TRUE,
+              linesize=0.2,
+              show.legend=FALSE) +
+  geom_tippoint(aes(colour=class, shape=captain.family),
+                stroke=0.3,
+                size=0.8) +
+  scale_shape_manual(breaks=c("Phoenix", "Hephaestus", "Tardis", "Serenity",
+                              "Prometheus", "Enterprise", "Galactica", "Moya",
+                              "Arwing", "Voyager", "Family 11"),
+                     values=c(15, 16, 17, 11, 7, 6, 14, 10, 3, 13, 8),
+                     na.translate=FALSE) +
+  scale_fill_manual(values=c('#7BAFDE','#D1BBD7', '#4EB265',
+                             '#CAE0AB', '#F7F056', '#F4A736', '#DC050C')) +
+  scale_colour_manual(values=c('#7BAFDE','#D1BBD7', '#4EB265',
+                               '#CAE0AB', '#F7F056', '#F4A736', '#DC050C')) +
+  guides(colour=guide_legend(override.aes=list(size=2), order=1),
+         shape=guide_legend(override.aes=list(size=2), order=2, ncol=2)) +
+  theme(legend.position=c(0.5, 0.5),
+        legend.background=element_blank(),
+        legend.key.size=unit(10,"pt"),
+        legend.title=element_blank(),
+        legend.text=element_text(face="italic", margin=margin(l=0.1, b=0.1, t=0.1)))
+
+#Write to file
+pdf(file=paste0(dir.starship, "sourmash_tree_big-", Sys.Date(), ".pdf"),
+    height=10, width=10)
+gg.sourmash.big.tree
+dev.off()
+
+#Calculate topological distance of mashtree tree from sourmash tree
+RF.dist(sourmash.big.tree, kmer.element.big.tree, normalize=TRUE)
+
+
+###############################################################
+## SOURMASH CURATED ELEMENT KMER TREE (SUPPLEMENTARY FIGURE) ##
+###############################################################
+
+#Read in sourmash distance matrix and generate neighbour-joining tree
+sourmash.curated.dist <- as.dist(read.csv("R:/GaeumannomycesStarships/sourmash/curated_dist.csv"))
+sourmash.curated.tree <- nj(sourmash.curated.dist)
+
+sourmash.curated.tree$tip.label <-
+  sub("\\.", "-",
+      sub("\\.fasta", "",
+          sub("__.*", "",
+              sub("gaeumannomyces.elements.id_", "",
+                  sub("Starships.id_", "", sourmash.curated.tree$tip.label)))))
+#Plot tree
+gg.sourmash.curated.tree <- ggtree(sourmash.curated.tree, linewidth=NA, layout="fan") %<+% metadata +
+  xlim(-0.3, 2.6) +
+  geom_tree(linewidth=0.2,
+            aes(colour=ifelse(as.numeric(label) < 70, "insig", NA)),
+            show.legend=FALSE) +
+  scale_colour_manual(values="grey",
+                      na.value="black") +
+  new_scale_colour() +
+  geom_tiplab(geom="label",
+              aes(label=element, fill=genus, colour=genus),
+              label.padding=unit(0, "pt"),
+              label.size=0.5,
+              size=1.5,
+              align=TRUE,
+              linesize=0.2,
+              show.legend=FALSE) +
+  geom_tiplab(geom="label",
+              aes(label=element),
+              fill="white",
+              alpha=0.6,
+              colour="black",
+              label.padding=unit(0, "pt"),
+              label.size=NA,
+              size=1.5,
+              align=TRUE,
+              linetype=NULL,
+              show.legend=FALSE) +
+  scale_fill_manual(
+    breaks=sort(unique(metadata$genus)),
+    values=c('#1965B0', '#D1BBD7', '#81C4E7', '#E8ECFB', '#AA6F9E', '#E65518',
+             '#E8601C', '#4EB265', '#5289C7', '#F1932D', '#F6C141', '#F7F056',
+             '#994F88', '#EE8026', '#7BAFDE', '#AA6F9E', '#DC050C')
+  ) +
+  scale_colour_manual(
+    breaks=sort(unique(metadata$genus)),
+    values=c('#1965B0', '#D1BBD7', '#81C4E7', '#E8ECFB', '#AA6F9E', '#E65518',
+             '#E8601C', '#4EB265', '#5289C7', '#F1932D', '#F6C141', '#F7F056',
+             '#994F88', '#EE8026', '#7BAFDE', '#AA6F9E', '#DC050C')
+  ) +
+  geom_fruit(geom=geom_bar,
+             aes(y=tip,
+                 x=element.length),
+             stat="identity",
+             offset=1.4,
+             pwidth=0.5) +
+  ggpreview(width=4, height=4)
+
+
+#sourmash/mashtree tanglegram
+
+#Set arbitrary element to root on
+arbitrary.root <- "Enterprise_Msp"
+kmer.element.tree.rooted <- root(kmer.element.tree,
+                                 arbitrary.root,
+                                 resolve.root=TRUE,
+                                 edgelabel=TRUE)
+sourmash.curated.tree.rooted <- root(sourmash.curated.tree,
+                                     arbitrary.root,
+                                     resolve.root=TRUE,
+                                     edgelabel=TRUE)
+
+#Make tip labels match
+kmer.element.tree.rooted$tip.label <-
+  metadata$element[match(kmer.element.tree.rooted$tip.label, metadata$tip)]
+sourmash.curated.tree.rooted$tip.label <-
+  metadata$element[match(sourmash.curated.tree.rooted$tip.label, metadata$tip)]
+
+#Make tanglegram
+tanglegram <- cophylo(kmer.element.tree.rooted, sourmash.curated.tree.rooted)
+
+#Extract tanglegram trees
+kmer.element.tree.untangled <- tanglegram$trees[[1]]
+sourmash.curated.tree.untangled <- tanglegram$trees[[2]]
+
+#Plot trees
+for (status in c("kmer.element", "sourmash.curated")) {
+
+  tree.untangled <- get(paste0(status, ".tree.untangled"))
+  other.untangled <- get(paste0(c("kmer.element", "sourmash.curated")[which(!c("kmer.element", "sourmash.curated") %in% status)], ".tree.untangled"))
+
+  #Plot base tree
+  gg.tree <- ggtree(tree.untangled, branch.length="none",
+                    ladderize=FALSE, lwd=NA) %<+%
+    (metadata %>% select(element, everything())) +
+    geom_tree(aes(colour=ifelse(as.numeric(label) < 70, "insig", NA)),
+              lwd=0.3,
+              show.legend=FALSE) +
+    scale_colour_manual(values="darkgrey", na.value="black")
+
+  #Flip captain tree and add highlights and title
+  if (status == "sourmash.curated") {
+
+    gg.tree2 <- gg.tree +
+      scale_x_reverse() +
+      xlim(37, 0) +
+      new_scale_colour() +
+      geom_tiplab(geom="label",
+                  aes(fill=genus, colour=genus),
+                  label.padding=unit(0, "pt"),
+                  label.size=0.5,
+                  size=1.2,
+                  offset=-16.6,
+                  align=TRUE,
+                  linesize=0.3) +
+      geom_tiplab(geom="label",
+                  fill="white",
+                  alpha=0.6,
+                  colour="black",
+                  label.padding=unit(0, "pt"),
+                  label.size=NA,
+                  size=1.2,
+                  offset=-16.6,
+                  align=TRUE,
+                  linetype=NULL) +
+      ggtitle("sourmash")
+
+  } else {
+
+    gg.tree2 <- gg.tree +
+      xlim(0, 23) +
+      new_scale_colour() +
+      geom_tiplab(geom="label",
+                  aes(fill=genus, colour=genus),
+                  label.padding=unit(0, "pt"),
+                  label.size=0.5,
+                  size=1.2,
+                  offset=9.9,
+                  hjust=1,
+                  align=TRUE,
+                  linesize=0.3) +
+      geom_tiplab(geom="label",
+                  fill="white",
+                  alpha=0.6,
+                  colour="black",
+                  label.padding=unit(0, "pt"),
+                  label.size=NA,
+                  size=1.2,
+                  offset=9.9,
+                  hjust=1,
+                  align=TRUE,
+                  linetype=NULL) +
+      ggtitle("mashtree")
+
+  }
+
+  #Add scales and theme
+  gg.tree3 <- gg.tree2 +
+    scale_fill_manual(
+      breaks=sort(unique(metadata$genus)),
+      values=c('#1965B0', '#D1BBD7', '#81C4E7', '#E8ECFB', '#AA6F9E', '#E65518',
+               '#E8601C', '#4EB265', '#5289C7', '#F1932D', '#F6C141', '#F7F056',
+               '#994F88', '#EE8026', '#7BAFDE', '#AA6F9E', '#DC050C')
+    ) +
+    scale_colour_manual(
+      breaks=sort(unique(metadata$genus)),
+      values=c('#1965B0', '#D1BBD7', '#81C4E7', '#E8ECFB', '#AA6F9E', '#E65518',
+               '#E8601C', '#4EB265', '#5289C7', '#F1932D', '#F6C141', '#F7F056',
+               '#994F88', '#EE8026', '#7BAFDE', '#AA6F9E', '#DC050C')
+    ) +
+    scale_y_continuous(expand=c(0, 2)) +
+    theme_void() +
+    theme(legend.position="none",
+          plot.title=element_text(hjust=0.5, size=7, face="bold"))
+
+  assign(paste0("gg.tree.", status), gg.tree3)
+
+}
+
+#Make dataframe for connecting lines
+lines.df <-
+  data.frame(
+    label1=gg.tree.kmer.element$data$label[gg.tree.kmer.element$data$isTip == TRUE],
+    label2=gg.tree.sourmash.curated$data$label[match(gg.tree.kmer.element$data$label[gg.tree.kmer.element$data$isTip == TRUE],
+                                                     gg.tree.sourmash.curated$data$label[gg.tree.sourmash.curated$data$isTip == TRUE])],
+    y1=gg.tree.kmer.element$data$y[gg.tree.kmer.element$data$isTip == TRUE],
+    y2=gg.tree.sourmash.curated$data$y[match(gg.tree.kmer.element$data$label[gg.tree.kmer.element$data$isTip == TRUE],
+                                             gg.tree.sourmash.curated$data$label[gg.tree.sourmash.curated$data$isTip == TRUE])]
+  )
+
+#Add genus for colouring and fix y to account for missing tips in captain tree
+lines.df <- lines.df %>%
+  mutate(genus=metadata$genus[match(label1, metadata$element)],
+         y2=length(!which(is.na(gg.tree.kmer.element$data$tip)))/
+           length(!which(is.na(gg.tree.sourmash.curated$data$tip))) * y2)
+
+#Plot lines and labels
+gg.lines <- ggplot(lines.df) +
+  geom_segment(aes(x=0, y=y1, xend=1, yend=y2,
+                   colour=genus),
+               lwd=0.2,
+               lty="dashed") +
+  scale_y_continuous(expand=c(0, 2)) +
+  scale_x_continuous(expand=c(0, 0)) +
+  scale_colour_manual(
+    breaks=sort(unique(metadata$genus)),
+    values=c('#1965B0', '#D1BBD7', '#81C4E7', '#E8ECFB', '#AA6F9E', '#E65518',
+             '#E8601C', '#4EB265', '#5289C7', '#F1932D', '#F6C141', '#F7F056',
+             '#994F88', '#EE8026', '#7BAFDE', '#AA6F9E', '#DC050C')
+  ) +
+  theme_void() +
+  theme(legend.position="none")
+
+#Combine into tanglegram
+gg.sourmash.tanglegram <- plot_grid(gg.tree.kmer.element, gg.lines, gg.tree.sourmash.curated,
+                                    ncol=3, rel_widths=c(1, 0.3, 1),
+                                    align="h", axis="bt")
+
+ggpreview(gg.sourmash.tanglegram, width=3, height=4)
+
+
+#Calculate topological distance of mashtree tree from sourmash tree
+RF.dist(kmer.element.tree.rooted, sourmash.curated.tree.rooted, normalize=TRUE)
+
+#Calculate percentage of genera that are monophyletic in captain and element trees
+monophyly.df <- data.frame(genus=metadata %>% group_by(genus) %>% summarise(num=n()) %>% filter(num > 1) %>% pull(genus),
+                           mashtree=NA,
+                           sourmash=NA)
+
+for (genus in unique(metadata$genus)) {
+
+  monophyly.df$mashtree[monophyly.df$genus == genus] <-
+    is.monophyletic(kmer.element.tree.rooted, metadata$element[metadata$genus == genus])
+  monophyly.df$sourmash[monophyly.df$genus == genus] <-
+    is.monophyletic(sourmash.curated.tree.rooted, metadata$element[metadata$genus == genus])
+
+}
+
+monophyly.df %>%
+  summarise(mashtree=sum(mashtree, na.rm=TRUE)/n()*100,
+            sourmash=sum(sourmash, na.rm=TRUE)/n()*100)
+
+#Write to file
+pdf(file=paste0(dir.starship, "sourmash_fig-", Sys.Date(), ".pdf"),
+    height=4, width=7)
+plot_grid(gg.sourmash.curated.tree, gg.sourmash.tanglegram,
+          rel_widths=c(4, 3), labels="auto")
+dev.off()
