@@ -9,7 +9,7 @@ Bioinformatics workflow for:
 
 The pipeline was written for and run on Norwich BioScience Institutes' HPC cluster which uses the SLURM batch-queue system. This means that the bash scripts (`.sh` file endings) specify core allocation, run times and memory usage allocation that may need to be adapted for different platforms.
 
-Input data was sourced from [Hill et al. (2024)](https://www.biorxiv.org/content/10.1101/2024.02.15.580261v1), [Gluck-Thaler et al. (2022)](https://doi.org/10.1093/molbev/msac109) and [Gluck-Thaler et al. (2024)](https://doi.org/10.1093/nar/gkae327).
+Input data was sourced from [Hill et al. (2025)](https://doi.org/10.1186/s12864-025-11432-0), [Gluck-Thaler et al. (2022)](https://doi.org/10.1093/molbev/msac109) and [Gluck-Thaler et al. (2024)](https://doi.org/10.1093/nar/gkae327).
 
 ---
 
