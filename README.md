@@ -5,7 +5,7 @@
 </picture>
 
 Bioinformatics workflow for:
-> Hill et al. (2024) *Starship* giant transposable elements cluster by host taxonomy using kmer-based phylogenetics. bioRxiv doi:[10.1101/2024.08.30.610507](https://www.biorxiv.org/content/10.1101/2024.08.30.610507v1)
+> Hill et al. (2025) *Starship* giant transposable elements cluster by host taxonomy using kmer-based phylogenetics. G3:Genes, Genomes, Genetics doi:[10.1093/g3journal/jkaf082](https://www.doi.org/10.1093/g3journal/jkaf082)
 
 The pipeline was written for and run on Norwich BioScience Institutes' HPC cluster which uses the SLURM batch-queue system. This means that the bash scripts (`.sh` file endings) specify core allocation, run times and memory usage allocation that may need to be adapted for different platforms.
 
@@ -31,4 +31,4 @@ Script to plot figures: `plot_gaeumannomyces_cargo.R`
 
 ## Citation
 
-> Hill et al. (2024) *Starship* giant transposable elements cluster by host taxonomy using kmer-based phylogenetics. bioRxiv doi:[10.1101/2024.08.30.610507](https://www.biorxiv.org/content/10.1101/2024.08.30.610507v1)
+> Hill et al. (2025) *Starship* giant transposable elements cluster by host taxonomy using kmer-based phylogenetics. G3:Genes, Genomes, Genetics doi:[10.1093/g3journal/jkaf082](https://www.doi.org/10.1093/g3journal/jkaf082)
